@@ -1,0 +1,21 @@
+cs50
+Flask
+Flask-Session
+pytz
+requests
+
+CREATE TABLE history (
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    stock_symbol TEXT NOT NULL,
+    stock_price REAL NOT NULL,
+    shares INTEGER NOT NULL,
+    time TIMESTAMP NOT NULL
+);
+
+CREATE TABLE status (
+    user_id INTERGER NOT NULL,
+    stock_symbol TEXT NOT NULL,
+    shares INTEGER NOT NULL
+);
