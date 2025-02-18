@@ -1,12 +1,24 @@
 import os
 
-from cs50 import SQL
+import sqlite3
+from flask import g
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, login_required, lookup, usd
 from datetime import datetime
+
+
+DATABASE = "finance.db"
+
+def get_db():
+    """Get a database connection"""
+    if "db" not in g:
+        g.db = sqlite3.connect(DATABASE, detect_types=sqlite3.PARSE_DECLTYPES)
+        g.db.row_factory = sqlite3.Row  # Enables dictionary-like row access
+    return g.db
+
 
 # Configure application
 app = Flask(__name__)
@@ -18,10 +30,6 @@ app.jinja_env.filters["usd"] = usd
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
-
-# Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///finance.db")
-
 
 @app.after_request
 def after_request(response):
@@ -35,33 +43,42 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    """Show portfolio of stocks"""
+    conn = get_db()
 
-    # Get list of stocks purchased
-    array_of_stocks = db.execute(
+    # Get list of distinct stocks purchased
+    rows = conn.execute(
         "SELECT DISTINCT stock_symbol FROM status WHERE user_id = ?",
-        session["user_id"]
-    )
+        (session["user_id"],)
+    ).fetchall()
+
     stocks = []
-    for element in array_of_stocks:
-        stock = lookup(element["stock_symbol"])
-        stock["shares"] = db.execute(
-            "SELECT SUM(shares) FROM status WHERE stock_symbol = ?",
-            stock["symbol"]
-        )[0]["SUM(shares)"]
+
+    for row in rows:
+        # Lookup current stock price
+        stock = lookup(row["stock_symbol"])
+        if stock is None:
+            continue  # or handle error
+        
+        # Get total shares for this stock
+        total_shares_row = conn.execute(
+            "SELECT SUM(shares) as total_shares FROM status WHERE stock_symbol = ? AND user_id = ?",
+            (stock["symbol"], session["user_id"])
+        ).fetchone()
+        stock["shares"] = total_shares_row["total_shares"]
         stock["total"] = stock["price"] * stock["shares"]
         stocks.append(stock)
 
     # Get cash balance
-    cash_balance = db.execute(
-        "SELECT cash from users where id = ?",
-        session["user_id"]
-    )[0]["cash"]
+    # Get cash balance
+    cash_row = conn.execute(
+        "SELECT cash FROM users WHERE id = ?",
+        (session["user_id"],)
+    ).fetchone()
+    cash_balance = cash_row["cash"]
 
-    # Get grand_total
-    grand_total = cash_balance
-    for stock in stocks:
-        grand_total += stock["total"]
+    # Calculate grand total (cash + total value of stocks)
+    grand_total = cash_balance + sum(stock["total"] for stock in stocks)
+    
     return render_template("index.html", stocks=stocks, cash_balance=cash_balance, grand_total=grand_total)
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -91,7 +108,7 @@ def buy():
             return apology("Invalid shares")
 
         # Check for remaining cash in the account
-        remaining_cash = db.execute(
+        remaining_cash = get_db().execute(
             "SELECT cash FROM users WHERE id = ?",
             session["user_id"]
         )
@@ -108,12 +125,12 @@ def buy():
             return apology("Insufficient cash in your account")
 
         try:
-            db.execute("BEGIN TRANSACTION")
+            get_db().execute("BEGIN TRANSACTION")
             # Subtract cash from user's account
-            db.execute("UPDATE users SET cash = ? WHERE id = ?", remaining_cash - amount_bought, session["user_id"])
+            get_db().execute("UPDATE users SET cash = ? WHERE id = ?", remaining_cash - amount_bought, session["user_id"])
 
             # Insert transaction information into database
-            db.execute("INSERT INTO history (user_id, type, stock_symbol, stock_price, shares, time) VALUES (?, ?, ?, ?, ?, ?)",
+            get_db().execute("INSERT INTO history (user_id, type, stock_symbol, stock_price, shares, time) VALUES (?, ?, ?, ?, ?, ?)",
                         session["user_id"],
                         "buy",
                         stock_information["symbol"],
@@ -121,13 +138,13 @@ def buy():
                         shares,
                         datetime.now())
 
-            db.execute("INSERT INTO status (user_id, stock_symbol, shares) VALUES (?, ?, ?)",
+            get_db().execute("INSERT INTO status (user_id, stock_symbol, shares) VALUES (?, ?, ?)",
                         session["user_id"],
                         stock_information["symbol"],
                         shares)
-            db.execute("COMMIT")
+            get_db().execute("COMMIT")
         except Exception as e:
-            db.execute("ROLLBACK")
+            get_db().execute("ROLLBACK")
             return apology(f"Transaction failed: {str(e)}")
         # Redirect to main page
         return redirect("/")
@@ -136,7 +153,9 @@ def buy():
 @login_required
 def history():
     """Show history of transactions"""
-    history = db.execute("SELECT * FROM history WHERE user_id = ?", session["user_id"])
+    history = get_db().execute(
+        "SELECT * FROM history WHERE user_id = ?", (session["user_id"],)
+    ).fetchall()
     return render_template("history.html", history=history)
 
 
@@ -155,13 +174,13 @@ def login():
             return apology("must provide username", 403)
 
         # Ensure password was submitted
-        elif not request.form.get("password"):
+        if not request.form.get("password"):
             return apology("must provide password", 403)
 
         # Query database for username
-        rows = db.execute(
-            "SELECT * FROM users WHERE username = ?", request.form.get("username")
-        )
+        rows = get_db().execute(
+            "SELECT * FROM users WHERE username = ?", (request.form.get("username"),)
+        ).fetchall()
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(
@@ -205,8 +224,9 @@ def quote():
 
         # get stock information
         stock_information = lookup(symbol)
-        if stock_information == None:
+        if stock_information is None:
             return apology("Invalid stock symbol")
+
 
         return render_template("quoted.html", information=stock_information)
 
@@ -225,10 +245,12 @@ def register():
         # Data validation
         if not username:
             return apology("No username found")
-        existed_username = db.execute("SELECT * FROM users WHERE username = ?", username)
-        if existed_username:
-            return apology("Username existed")
+        
+        user = get_db().execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
+        if user is not None:
+            return apology("Username existed")
+        
         if not password:
             return apology("No password found")
         if not confirmation:
@@ -237,14 +259,17 @@ def register():
             return apology("Passwords do not match")
 
         password_hash = generate_password_hash(password)
-
+        
         # Insert data into database
+        db = get_db()
         db.execute(
             "INSERT INTO users (username, hash) VALUES (?, ?)",
-            username,
-            password_hash
+            (username, password_hash)
         )
+        db.commit()  # Commit the changes
+        
         return redirect("/login")
+    
     return render_template("register.html")
 
 
@@ -252,10 +277,7 @@ def register():
 @login_required
 def sell():
     """Sell shares of stock"""
-    array_of_stocks = db.execute(
-        "SELECT DISTINCT stock_symbol FROM status WHERE user_id = ?",
-        session["user_id"]
-    )
+    array_of_stocks = get_db().execute("SELECT DISTINCT stock_symbol FROM status WHERE user_id = ?", (session["user_id"],)).fetchall()
 
     if request.method == "GET":
         return render_template("sell.html", stocks=array_of_stocks)
@@ -277,26 +299,26 @@ def sell():
         except ValueError:
             return apology("Invalid shares")
 
-        result = db.execute("SELECT SUM(shares) FROM status WHERE user_id = ? AND stock_symbol = ?", session["user_id"], symbol)
+        result = get_db().execute("SELECT SUM(shares) FROM status WHERE user_id = ? AND stock_symbol = ?", session["user_id"], symbol)
         remaining_shares = result[0]["SUM(shares)"]
         if shares <= 0 or shares > remaining_shares:
             return apology("Invalid shares")
 
         try:
             # Start a transaction
-            db.execute("BEGIN TRANSACTION")
+            get_db().execute("BEGIN TRANSACTION")
 
             # Update the total cash of user
-            remaining_cash = db.execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
+            remaining_cash = get_db().execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
             amount_sell = stock["price"] * shares
-            db.execute("UPDATE users SET cash = ? WHERE id = ?", remaining_cash + amount_sell, session["user_id"])
+            get_db().execute("UPDATE users SET cash = ? WHERE id = ?", remaining_cash + amount_sell, session["user_id"])
 
             # Update transaction history
-            db.execute("INSERT INTO status (user_id, stock_symbol, shares) VALUES (?, ?, ?)",
+            get_db().execute("INSERT INTO status (user_id, stock_symbol, shares) VALUES (?, ?, ?)",
                         session["user_id"],
                         symbol,
                         -shares)
-            db.execute("INSERT INTO history (user_id, type, stock_symbol, stock_price, shares, time) VALUES (?, ?, ?, ?, ?, ?)",
+            get_db().execute("INSERT INTO history (user_id, type, stock_symbol, stock_price, shares, time) VALUES (?, ?, ?, ?, ?, ?)",
                         session["user_id"],
                         "sell",
                         symbol,
@@ -305,16 +327,21 @@ def sell():
                         datetime.now())
 
             # Commit the transaction
-            db.execute("COMMIT")
+            get_db().execute("COMMIT")
 
         except Exception as e:
-            db.execute("ROLLBACK")
+            get_db().rollback()
             return apology(f"Transaction failed: {str(e)}")
         return redirect("/")
 
 
 
-
+@app.teardown_appcontext
+def close_db(exception):
+    """Close the database connection at the end of the request"""
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
 
 
 
