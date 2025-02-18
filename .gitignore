@@ -1,0 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+.ENV/
+env.bak/
+venv.bak/
+
+# Flask session directory (if you don’t want to track session data)
+flask_session/
+
+# Local environment variables or secrets
+.env
+*.env
+
+# SQLite / database files
+*.sqlite3
+*.db
+
+# Logs
+*.log
+log/
+logs/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# VSCode settings (optional)
+.vscode/
+
+# macOS Finder files
+.DS_Store
+
+# Ignore pytest cache
+.pytest_cache/
