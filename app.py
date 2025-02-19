@@ -1,15 +1,13 @@
-import os
-
 import sqlite3
 from flask import g
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, login_required, lookup, usd
 from datetime import datetime
 
-
+# Access the database
 DATABASE = "finance.db"
 
 def get_db():
@@ -18,7 +16,6 @@ def get_db():
         g.db = sqlite3.connect(DATABASE, detect_types=sqlite3.PARSE_DECLTYPES)
         g.db.row_factory = sqlite3.Row  # Enables dictionary-like row access
     return g.db
-
 
 # Configure application
 app = Flask(__name__)
@@ -31,6 +28,7 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
+# Configure response information
 @app.after_request
 def after_request(response):
     """Ensure responses aren't cached"""
@@ -39,8 +37,8 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
     return response
 
-
-@app.route("/")
+# Handle main logic
+@app.route("/home")
 @login_required
 def index():
     conn = get_db()
@@ -79,7 +77,7 @@ def index():
     # Calculate grand total (cash + total value of stocks)
     grand_total = cash_balance + sum(stock["total"] for stock in stocks)
     
-    return render_template("portfolio/index.html", stocks=stocks, cash_balance=cash_balance, grand_total=grand_total)
+    return render_template("portfolio/home.html", stocks=stocks, cash_balance=cash_balance, grand_total=grand_total)
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
@@ -192,7 +190,7 @@ def login():
         session["user_id"] = rows[0]["id"]
 
         # Redirect user to home page
-        return redirect("/")
+        return redirect("/home")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -207,7 +205,7 @@ def logout():
     session.clear()
 
     # Redirect user to login form
-    return redirect("/")
+    return redirect("/home")
 
 
 @app.route("/quote", methods=["GET", "POST"])
@@ -332,7 +330,7 @@ def sell():
         except Exception as e:
             get_db().rollback()
             return apology(f"Transaction failed: {str(e)}")
-        return redirect("/")
+        return redirect("/home")
 
 
 
