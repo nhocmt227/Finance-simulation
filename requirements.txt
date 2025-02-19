@@ -3,6 +3,7 @@ Flask
 Flask-Session
 pytz
 requests
+python-dotenv
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

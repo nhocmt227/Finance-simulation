@@ -3,9 +3,15 @@ from flask import g
 from flask import Flask, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
+from dotenv import load_dotenv
+import os
 
 from helpers import apology, login_required, lookup, usd
 from datetime import datetime
+
+load_dotenv()  # take environment variables from .env.
+
+api_key = os.getenv("API_KEY")
 
 # Access the database
 DATABASE = "finance.db"

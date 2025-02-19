@@ -45,3 +45,6 @@ logs/
 
 # Ignore pytest cache
 .pytest_cache/
+
+# Environment configuration file
+.env
