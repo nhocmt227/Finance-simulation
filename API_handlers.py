@@ -1,7 +1,102 @@
 from dotenv import load_dotenv
+import requests
+import os
+import urllib.request
+import urllib.parse
+import json
+import csv
 
-# take environment variables from .env.
-load_dotenv()  
-# Retrieve the API key
-api_key = os.getenv("API_KEY")
+# Stock lookup
+def lookup(symbol, api_key):
+    symbol = symbol.upper()
+    url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}'
+    try:
+        response = requests.get(url)
+        data = response.json()["Global Quote"]
+        if is_limited(data) or is_invalid(data):
+            return None
+        
+        symbol = data.get("01. symbol")
+        price = float(data.get("05. price", 0))  # Convert safely to float
 
+        return {"symbol": symbol, "price": price}
+    
+    except requests.exceptions.RequestException as e:
+        print(f"HTTP Request Error: {e}")
+    except KeyError as e:
+        print(f"Missing Key in Response: {e}")
+    except ValueError as e:
+        print(f"Value Conversion Error: {e}")
+    except Exception as e:
+        print(f"Unexpected Error: {e}")
+
+    return None
+
+# The size can be very big
+def get_all_active_stocks(api_key):
+    # replace the "demo" apikey below with your own key from https://www.alphavantage.co/support/#api-key
+    try:
+        CSV_URL = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={api_key}'
+        stocks = []
+        with requests.Session() as s:
+            download = s.get(CSV_URL)
+            decoded_content = download.content.decode('utf-8')
+            cr = csv.reader(decoded_content.splitlines(), delimiter=',')
+            my_list = list(cr)
+            for row in my_list:
+                stocks.append(row)
+            return stocks
+    except (KeyError, ValueError, IndexError):
+        print("Error in get_all_active_stocks function")
+        return None
+
+# Get n stocks
+def get_all_active_stocks(api_key, amount):
+    # replace the "demo" apikey below with your own key from https://www.alphavantage.co/support/#api-key
+    try:
+        CSV_URL = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={api_key}'
+        stocks = []
+        with requests.Session() as s:
+            download = s.get(CSV_URL)
+            decoded_content = download.content.decode('utf-8')
+            cr = csv.reader(decoded_content.splitlines(), delimiter=',')
+            my_list = list(cr)
+            count = 0
+            for row in my_list:
+                if (count >= amount):
+                    return stocks
+                else:
+                    stocks.append(row)
+                    count += 1
+    except (ValueError, IndexError, KeyError):
+        print("Error in get_all_active_stocks function")
+        return None
+
+def is_invalid(data):
+    if data is None or data == {}:
+        return True
+    else:
+        return False
+    
+def is_limited(data):
+    if "Information" in data and data["Information"].startswith("Thank you"):
+        print("Limited usage")
+        return True
+    else:
+        return False
+
+def pretty_print(data):
+    pretty_json = json.dumps(data, indent=4)
+    print(pretty_json)
+
+if __name__ == "__main__":
+    # take environment variables from .env.
+    load_dotenv()  
+    # Retrieve the API key
+    API_KEY = os.getenv("API_KEY")
+    print(f'API_KEY: {API_KEY}')
+
+    symbol = "TSLA"
+    
+    quote_data = get_quote(symbol, API_KEY)
+    pretty_print(quote_data)

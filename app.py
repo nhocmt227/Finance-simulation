@@ -4,11 +4,18 @@ from flask import Flask, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 import os
+from dotenv import load_dotenv
 
-from helpers import apology, login_required, lookup, usd
+from helpers import apology, login_required, usd
 from datetime import datetime
 from db import get_db, close_db
+from API_handlers import lookup
 
+
+# take environment variables from .env.
+load_dotenv()  
+# Retrieve the API key
+API_KEY = os.getenv("API_KEY")
 
 # Configure application
 app = Flask(__name__)
@@ -37,7 +44,10 @@ def after_request(response):
 @app.route("/", methods=["GET"])
 def main():
     """Render the public index page for unauthenticated users."""
-    return render_template("public/index.html")
+    if "user_id" in session:
+        return redirect("/home")
+    else:
+        return render_template("public/index.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -90,6 +100,7 @@ def register():
         return render_template("auth/register.html")
 
     elif request.method == "POST":
+        db = get_db()
         # Get data
         username = request.form.get("username")
         password = request.form.get("password")
@@ -99,11 +110,10 @@ def register():
         if not username:
             return apology("No username found")
         
-        user = get_db().execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
 
         if user is not None:
             return apology("Username existed")
-        
         if not password:
             return apology("No password found")
         if not password_confirmation:
@@ -113,8 +123,7 @@ def register():
 
         password_hash = generate_password_hash(password)
         
-        # Insert data into database
-        db = get_db()
+        # Save user data into database
         db.execute(
             "INSERT INTO users (username, hash) VALUES (?, ?)",
             (username, password_hash)
@@ -155,7 +164,7 @@ def index():
 
     for row in rows:
         # Lookup current stock price
-        stock = lookup(row["stock_symbol"])
+        stock = lookup(row["stock_symbol"], API_KEY)
         if stock is None:
             continue  # or handle error
         
@@ -186,15 +195,16 @@ def index():
 @login_required
 def buy():
     """Buy shares of stock"""
+    db = get_db()
     if request.method == "GET":
         return render_template("portfolio/buy.html")
     else:
-        # Get stock price
+        # Get stock information from form
         symbol = request.form.get("symbol")
         if not symbol:
             return apology("No stock found")
-        stock_information = lookup(symbol)
-        if stock_information == None:
+        stock_information = lookup(symbol, API_KEY)
+        if not stock_information:
             return apology("Invalid stock symbol")
 
         # Get number of shares
@@ -209,43 +219,57 @@ def buy():
             return apology("Invalid shares")
 
         # Check for remaining cash in the account
-        remaining_cash = get_db().execute(
-            "SELECT cash FROM users WHERE id = ?",
-            session["user_id"]
-        )
-        if not remaining_cash:
-            return apology("Error retrieving remaining cash.")
+        user = db.execute("SELECT cash FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+        if not user:
+            return apology("User not found")
         try:
-            remaining_cash = remaining_cash[0]["cash"]
-            remaining_cash = float(remaining_cash)
+            remaining_cash = float(user["cash"])
         except ValueError:
             return apology("Unexpected error when access database")
 
+        # Calculate total cost of purchase
         amount_bought = float(stock_information["price"]) * shares
         if remaining_cash < amount_bought:
             return apology("Insufficient cash in your account")
 
         try:
-            get_db().execute("BEGIN TRANSACTION")
-            # Subtract cash from user's account
-            get_db().execute("UPDATE users SET cash = ? WHERE id = ?", remaining_cash - amount_bought, session["user_id"])
+            db.execute("BEGIN TRANSACTION")
 
-            # Insert transaction information into database
-            get_db().execute("INSERT INTO history (user_id, type, stock_symbol, stock_price, shares, time) VALUES (?, ?, ?, ?, ?, ?)",
-                        session["user_id"],
-                        "buy",
-                        stock_information["symbol"],
-                        stock_information["price"],
-                        shares,
-                        datetime.now())
+            # Deduct cash from user's account
+            db.execute(
+                "UPDATE users SET cash = ? WHERE id = ?",
+                (remaining_cash - amount_bought, session["user_id"]),
+            )
 
-            get_db().execute("INSERT INTO status (user_id, stock_symbol, shares) VALUES (?, ?, ?)",
-                        session["user_id"],
-                        stock_information["symbol"],
-                        shares)
-            get_db().execute("COMMIT")
-        except Exception as e:
-            get_db().execute("ROLLBACK")
+            # Insert transaction into history table
+            db.execute(
+                "INSERT INTO history (user_id, type, stock_symbol, stock_price, shares, time) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (session["user_id"], "buy", stock_information["symbol"], stock_information["price"], shares, datetime.now()),
+            )
+
+            # Insert stock status into portfolio (if exists, update instead)
+            existing_stock = db.execute(
+                "SELECT shares FROM status WHERE user_id = ? AND stock_symbol = ?",
+                (session["user_id"], stock_information["symbol"]),
+            ).fetchone()
+
+            if existing_stock:
+                new_shares = existing_stock["shares"] + shares
+                db.execute(
+                    "UPDATE status SET shares = ? WHERE user_id = ? AND stock_symbol = ?",
+                    (new_shares, session["user_id"], stock_information["symbol"]),
+                )
+            else:
+                db.execute(
+                    "INSERT INTO status (user_id, stock_symbol, shares) VALUES (?, ?, ?)",
+                    (session["user_id"], stock_information["symbol"], shares),
+                )
+
+            db.execute("COMMIT")
+
+        except sqlite3.Error as e:
+            db.execute("ROLLBACK")
             return apology(f"Transaction failed: {str(e)}")
         # Redirect to main page
         return redirect("/")
@@ -273,7 +297,8 @@ def quote():
             return apology("No symbol found")
 
         # get stock information
-        stock_information = lookup(symbol)
+        stock_information = lookup(symbol, API_KEY)
+        print(stock_information)
         if stock_information is None:
             return apology("Invalid stock symbol")
 
@@ -287,60 +312,86 @@ def quote():
 @login_required
 def sell():
     """Sell shares of stock"""
-    array_of_stocks = get_db().execute("SELECT DISTINCT stock_symbol FROM status WHERE user_id = ?", (session["user_id"],)).fetchall()
+    db = get_db()
+
+    # Fetch user's stocks
+    array_of_stocks = db.execute("SELECT DISTINCT stock_symbol FROM status WHERE user_id = ?", (session["user_id"],)).fetchall()
 
     if request.method == "GET":
         return render_template("portfolio/sell.html", stocks=array_of_stocks)
     else:
-        # Stock validation
+        # Validate stock symbol
         symbol = request.form.get("symbol")
         if not symbol:
             return apology("Require symbol")
-        stock = lookup(symbol)
-        if stock == None:
+        
+        stock = lookup(symbol, API_KEY)
+        if not stock:
             return apology("Stock not found")
 
-        # Shares validation
+        # Validate shares
         shares = request.form.get("shares")
         if not shares:
             return apology("Require shares")
         try:
             shares = int(shares)
+            if shares < 0:
+                return apology("Invalid number of shares")
         except ValueError:
             return apology("Invalid shares")
 
-        result = get_db().execute("SELECT SUM(shares) FROM status WHERE user_id = ? AND stock_symbol = ?", session["user_id"], symbol)
-        remaining_shares = result[0]["SUM(shares)"]
-        if shares <= 0 or shares > remaining_shares:
-            return apology("Invalid shares")
+        # Get the user's available shares for this stock
+        result = db.execute(
+            "SELECT SUM(shares) AS total_shares FROM status WHERE user_id = ? AND stock_symbol = ?", 
+            (session["user_id"], symbol)
+        ).fetchone()
+
+        remaining_shares = result["total_shares"] if result and result["total_shares"] else 0
+        if shares > remaining_shares:
+            return apology("Not enough shares to sell")
 
         try:
             # Start a transaction
-            get_db().execute("BEGIN TRANSACTION")
+            db.execute("BEGIN TRANSACTION")
 
-            # Update the total cash of user
-            remaining_cash = get_db().execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
+            # Get user's current cash balance
+            user_cash = db.execute(
+                "SELECT cash FROM users WHERE id = ?", 
+                (session["user_id"],)
+            ).fetchone()
+
+            if not user_cash:
+                db.rollback()
+                return apology("User not found")
+            
+            current_cash = float(user_cash["cash"])
             amount_sell = stock["price"] * shares
-            get_db().execute("UPDATE users SET cash = ? WHERE id = ?", remaining_cash + amount_sell, session["user_id"])
+            updated_cash = current_cash + amount_sell
+            
+            # Update user's cash
+            db.execute(
+                "UPDATE users SET cash = ? WHERE id = ?", 
+                (updated_cash, session["user_id"])
+            )
 
             # Update transaction history
-            get_db().execute("INSERT INTO status (user_id, stock_symbol, shares) VALUES (?, ?, ?)",
-                        session["user_id"],
-                        symbol,
-                        -shares)
-            get_db().execute("INSERT INTO history (user_id, type, stock_symbol, stock_price, shares, time) VALUES (?, ?, ?, ?, ?, ?)",
-                        session["user_id"],
-                        "sell",
-                        symbol,
-                        stock["price"],
-                        shares,
-                        datetime.now())
+            db.execute(
+                "INSERT INTO history (user_id, type, stock_symbol, stock_price, shares, time) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (session["user_id"], "sell", symbol, stock["price"], shares, datetime.now()),
+            )
+
+            # Update stock holdings (subtract shares)
+            db.execute(
+                "INSERT INTO status (user_id, stock_symbol, shares) VALUES (?, ?, ?)",
+                (session["user_id"], symbol, -shares),
+            )
 
             # Commit the transaction
-            get_db().execute("COMMIT")
+            db.execute("COMMIT")
 
-        except Exception as e:
-            get_db().rollback()
+        except sqlite3.Error as e:
+            db.rollback()
             return apology(f"Transaction failed: {str(e)}")
         return redirect("/home")
 
