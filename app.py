@@ -3,30 +3,12 @@ from flask import g
 from flask import Flask, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
-from dotenv import load_dotenv
 import os
 
 from helpers import apology, login_required, lookup, usd
 from datetime import datetime
+from db import get_db, close_db
 
-load_dotenv()  # take environment variables from .env.
-
-api_key = os.getenv("API_KEY")
-
-# Access the database
-DATABASE = "finance.db"
-
-def get_db():
-    """Establish and return a database connection.
-
-    Connects to the SQLite database specified in DATABASE, storing the connection in Flask’s
-    g object to reuse it throughout the request. The row_factory is set to enable dictionary-like
-    access to rows.
-    """
-    if "db" not in g:
-        g.db = sqlite3.connect(DATABASE, detect_types=sqlite3.PARSE_DECLTYPES)
-        g.db.row_factory = sqlite3.Row  # Enables dictionary-like row access
-    return g.db
 
 # Configure application
 app = Flask(__name__)
@@ -364,15 +346,10 @@ def sell():
 
 
 
-
-
-
 @app.teardown_appcontext
-def close_db(exception):
+def teardown_db(exception):
     """Close the database connection at the end of the request"""
-    db = g.pop("db", None)
-    if db is not None:
-        db.close()
+    close_db(exception)
 
 
 
