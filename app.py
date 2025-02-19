@@ -79,14 +79,14 @@ def index():
     # Calculate grand total (cash + total value of stocks)
     grand_total = cash_balance + sum(stock["total"] for stock in stocks)
     
-    return render_template("index.html", stocks=stocks, cash_balance=cash_balance, grand_total=grand_total)
+    return render_template("portfolio/index.html", stocks=stocks, cash_balance=cash_balance, grand_total=grand_total)
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
 def buy():
     """Buy shares of stock"""
     if request.method == "GET":
-        return render_template("buy.html")
+        return render_template("portfolio/buy.html")
     else:
         # Get stock price
         symbol = request.form.get("symbol")
@@ -156,7 +156,7 @@ def history():
     history = get_db().execute(
         "SELECT * FROM history WHERE user_id = ?", (session["user_id"],)
     ).fetchall()
-    return render_template("history.html", history=history)
+    return render_template("portfolio/history.html", history=history)
 
 
 
@@ -196,7 +196,7 @@ def login():
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
-        return render_template("login.html")
+        return render_template("auth/login.html")
 
 
 @app.route("/logout")
@@ -215,7 +215,7 @@ def logout():
 def quote():
     """Get stock quote."""
     if request.method == "GET":
-        return render_template("quote.html")
+        return render_template("portfolio/quote.html")
     else:
         # Get symbol
         symbol = request.form.get("symbol")
@@ -228,13 +228,13 @@ def quote():
             return apology("Invalid stock symbol")
 
 
-        return render_template("quoted.html", information=stock_information)
+        return render_template("portfolio/quoted.html", information=stock_information)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
     if request.method == "GET":
-        return render_template("register.html")
+        return render_template("auth/register.html")
 
     elif request.method == "POST":
         # Get data
@@ -270,7 +270,7 @@ def register():
         
         return redirect("/login")
     
-    return render_template("register.html")
+    return render_template("auth/register.html")
 
 
 @app.route("/sell", methods=["GET", "POST"])
@@ -280,7 +280,7 @@ def sell():
     array_of_stocks = get_db().execute("SELECT DISTINCT stock_symbol FROM status WHERE user_id = ?", (session["user_id"],)).fetchall()
 
     if request.method == "GET":
-        return render_template("sell.html", stocks=array_of_stocks)
+        return render_template("portfolio/sell.html", stocks=array_of_stocks)
     else:
         # Stock validation
         symbol = request.form.get("symbol")
