@@ -6,34 +6,51 @@
 
 {% block main %}
 
-    <div class="container my-5">
-        <div class="row p-4 pb-0 pe-lg-0 pt-lg-5 align-items-center rounded-3 border shadow-lg">
-        <div class="col-lg-7 p-3 p-lg-5 pt-lg-3">
-            <h1 class="display-4 fw-bold lh-1 text-body-emphasis">Next-Level Trading Simulation 🚀</h1>
-            <p class="lead">Powered by real market data from YAHOO, our interactive platform helps you test strategies and learn market behavior—without risking real capital. Experience a robust, user-friendly environment to explore and refine your trading ideas.</p>
-            <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4 mb-lg-3">
-            <a href="/login" class="btn btn-primary btn-lg px-4 me-md-2 fw-bold">Log in</a>
-            <a href="/register" class="btn btn-outline-secondary btn-lg px-4">Sign up</a>
+
+
+    <div class="modal modal-sheet position-static d-block bg-body-secondary p-4 py-md-5" tabindex="-1" role="dialog" id="modalSignin">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content rounded-4 shadow">
+            <div class="modal-header p-5 pb-4 border-bottom-0">
+              <h1 class="fw-bold mb-0 fs-2">Log in to continue</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-        </div>
-        <div class="col-lg-4 offset-lg-1 p-0 overflow-hidden shadow-lg">
-            <img
-                class="rounded-lg-3"
-                src="{{ url_for('static', filename='images/hero-image.png') }}"
-                alt=""
-                width="720"
-            />      
-        </div>
+      
+            <div class="modal-body p-5 pt-0">
+                
+              <form action="/login" method="post">
+
+                <div class="form-floating mb-3">
+                  <input class="form-control rounded-3" id="floatingInput" placeholder="username" name="username">
+                  <label for="floatingInput">Username</label>
+                </div>
+                <div class="form-floating mb-3">
+                  <input type="password" class="form-control rounded-3" id="floatingPassword" placeholder="Password" name="password">
+                  <label for="floatingPassword">Password</label>
+                </div>
+                <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary" type="submit">Log in</button>
+                <small class="text-body-secondary"><a href="/register">Sign up</a> if you don't have an account</small>
+                <hr class="my-4">
+
+                <h2 class="fs-5 fw-bold mb-3">Or</h2>
+                <button class="w-100 py-2 mb-2 btn btn-outline-secondary rounded-3" type="submit">
+                  <svg class="bi me-1" width="16" height="16"><use xlink:href="#twitter"></use></svg>
+                    Continue with Twitter
+                </button>
+                <button class="w-100 py-2 mb-2 btn btn-outline-primary rounded-3" type="submit">
+                  <svg class="bi me-1" width="16" height="16"><use xlink:href="#facebook"></use></svg>
+                    Continue with Facebook
+                </button>
+                <button class="w-100 py-2 mb-2 btn btn-outline-secondary rounded-3" type="submit">
+                  <svg class="bi me-1" width="16" height="16"><use xlink:href="#github"></use></svg>
+                    Continue with GitHub
+                </button>
+              </form>
+              
+            </div>
+          </div>
         </div>
     </div>
 
-    <form action="/login" method="post">
-        <div class="mb-3">
-            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="username" placeholder="Username" type="text">
-        </div>
-        <div class="mb-3">
-            <input class="form-control mx-auto w-auto" name="password" placeholder="Password" type="password">
-        </div>
-        <button class="btn btn-primary" type="submit">Log In</button>
-    </form>
+
 {% endblock %}

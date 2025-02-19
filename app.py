@@ -11,7 +11,12 @@ from datetime import datetime
 DATABASE = "finance.db"
 
 def get_db():
-    """Get a database connection"""
+    """Establish and return a database connection.
+
+    Connects to the SQLite database specified in DATABASE, storing the connection in Flask’s
+    g object to reuse it throughout the request. The row_factory is set to enable dictionary-like
+    access to rows.
+    """
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE, detect_types=sqlite3.PARSE_DECLTYPES)
         g.db.row_factory = sqlite3.Row  # Enables dictionary-like row access
@@ -31,13 +36,122 @@ Session(app)
 # Configure response information
 @app.after_request
 def after_request(response):
-    """Ensure responses aren't cached"""
+    """Modify response headers to prevent caching.
+
+    This ensures that clients do not cache any responses.
+    """
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Expires"] = 0
     response.headers["Pragma"] = "no-cache"
     return response
 
-# Handle main logic
+
+@app.route("/", methods=["GET"])
+def main():
+    """Render the public index page for unauthenticated users."""
+    return render_template("public/index.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Handle user login.
+
+    GET: Render the login form.
+    POST: Validate credentials and log the user in.
+    """
+
+    # Forget any user_id
+    session.clear()
+
+    # User reached route via GET (as by clicking a link or via redirect)
+    if request.method == "GET":
+        return render_template("auth/login.html")
+    
+    # User reached route via POST (as by submitting a form via POST)
+    else:
+        # Ensure username was submitted
+        if not request.form.get("username"):
+            return apology("must provide username", 403)
+
+        # Ensure password was submitted
+        if not request.form.get("password"):
+            return apology("must provide password", 403)
+
+        # Query database for username
+        rows = get_db().execute(
+            "SELECT * FROM users WHERE username = ?", (request.form.get("username"),)
+        ).fetchall()
+
+        # Ensure username exists and password is correct
+        if len(rows) != 1 or not check_password_hash(
+            rows[0]["hash"], request.form.get("password")
+        ):
+            return apology("invalid username and/or password", 403)
+
+        # Remember which user has logged in
+        session["user_id"] = rows[0]["id"]
+
+        # Redirect user to home page
+        return redirect("/home")
+    
+    
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Register user"""
+    if request.method == "GET":
+        return render_template("auth/register.html")
+
+    elif request.method == "POST":
+        # Get data
+        username = request.form.get("username")
+        password = request.form.get("password")
+        password_confirmation = request.form.get("password-confirmation")
+
+        # Data validation
+        if not username:
+            return apology("No username found")
+        
+        user = get_db().execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+
+        if user is not None:
+            return apology("Username existed")
+        
+        if not password:
+            return apology("No password found")
+        if not password_confirmation:
+            return apology("Must provide confirmation")
+        if password != password_confirmation:
+            return apology("Passwords do not match")
+
+        password_hash = generate_password_hash(password)
+        
+        # Insert data into database
+        db = get_db()
+        db.execute(
+            "INSERT INTO users (username, hash) VALUES (?, ?)",
+            (username, password_hash)
+        )
+        db.commit()  # Commit the changes
+        
+        return redirect("/login")
+    
+    return render_template("auth/register.html")
+    
+
+@app.route("/logout")
+def logout():
+    """Log user out"""
+
+    # Forget any user_id
+    session.clear()
+
+    # Redirect user to login form
+    return redirect("/home")
+    
+
+
+
+
 @app.route("/home")
 @login_required
 def index():
@@ -78,6 +192,7 @@ def index():
     grand_total = cash_balance + sum(stock["total"] for stock in stocks)
     
     return render_template("portfolio/home.html", stocks=stocks, cash_balance=cash_balance, grand_total=grand_total)
+
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
@@ -157,57 +272,6 @@ def history():
     return render_template("portfolio/history.html", history=history)
 
 
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    """Log user in"""
-
-    # Forget any user_id
-    session.clear()
-
-    # User reached route via POST (as by submitting a form via POST)
-    if request.method == "POST":
-        # Ensure username was submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
-
-        # Ensure password was submitted
-        if not request.form.get("password"):
-            return apology("must provide password", 403)
-
-        # Query database for username
-        rows = get_db().execute(
-            "SELECT * FROM users WHERE username = ?", (request.form.get("username"),)
-        ).fetchall()
-
-        # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(
-            rows[0]["hash"], request.form.get("password")
-        ):
-            return apology("invalid username and/or password", 403)
-
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
-
-        # Redirect user to home page
-        return redirect("/home")
-
-    # User reached route via GET (as by clicking a link or via redirect)
-    else:
-        return render_template("auth/login.html")
-
-
-@app.route("/logout")
-def logout():
-    """Log user out"""
-
-    # Forget any user_id
-    session.clear()
-
-    # Redirect user to login form
-    return redirect("/home")
-
-
 @app.route("/quote", methods=["GET", "POST"])
 @login_required
 def quote():
@@ -228,47 +292,7 @@ def quote():
 
         return render_template("portfolio/quoted.html", information=stock_information)
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    """Register user"""
-    if request.method == "GET":
-        return render_template("auth/register.html")
 
-    elif request.method == "POST":
-        # Get data
-        username = request.form.get("username")
-        password = request.form.get("password")
-        confirmation = request.form.get("confirmation")
-
-        # Data validation
-        if not username:
-            return apology("No username found")
-        
-        user = get_db().execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-
-        if user is not None:
-            return apology("Username existed")
-        
-        if not password:
-            return apology("No password found")
-        if not confirmation:
-            return apology("Must provide confirmation")
-        if password != confirmation:
-            return apology("Passwords do not match")
-
-        password_hash = generate_password_hash(password)
-        
-        # Insert data into database
-        db = get_db()
-        db.execute(
-            "INSERT INTO users (username, hash) VALUES (?, ?)",
-            (username, password_hash)
-        )
-        db.commit()  # Commit the changes
-        
-        return redirect("/login")
-    
-    return render_template("auth/register.html")
 
 
 @app.route("/sell", methods=["GET", "POST"])
@@ -331,6 +355,9 @@ def sell():
             get_db().rollback()
             return apology(f"Transaction failed: {str(e)}")
         return redirect("/home")
+
+
+
 
 
 
