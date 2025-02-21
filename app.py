@@ -1,5 +1,4 @@
 import sqlite3
-from flask import g
 from flask import Flask, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -395,6 +394,9 @@ def sell():
             return apology(f"Transaction failed: {str(e)}")
         return redirect("/home")
 
+@app.route("/apologize", methods=["GET"])
+def apologize():
+    return apology("This feature is being implemented!")
 
 
 @app.teardown_appcontext
