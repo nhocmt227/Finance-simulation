@@ -11,16 +11,26 @@ def lookup(symbol, api_key):
     symbol = symbol.upper()
     url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}'
     try:
-        response = requests.get(url)
-        data = response.json()["Global Quote"]
-        if is_limited(data) or is_invalid(data):
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()  # Raise an error for HTTP issues
+        data = response.json()
+
+        # Check for API rate limit 
+        if is_limited(data):
+            return None
+        
+        stock_data = data.get("Global Quote", {})
+
+        if is_invalid(data):
             return None
         
         symbol = data.get("01. symbol")
         price = float(data.get("05. price", 0))  # Convert safely to float
 
         return {"symbol": symbol, "price": price}
-    
+    except requests.exceptions.Timeout:
+        print("Error: Request timed out.")
+        return {"error": "Request timed out. Try again later."}
     except requests.exceptions.RequestException as e:
         print(f"HTTP Request Error: {e}")
     except KeyError as e:
@@ -29,7 +39,6 @@ def lookup(symbol, api_key):
         print(f"Value Conversion Error: {e}")
     except Exception as e:
         print(f"Unexpected Error: {e}")
-
     return None
 
 # The size can be very big
@@ -79,11 +88,12 @@ def is_invalid(data):
         return False
     
 def is_limited(data):
-    if "Information" in data and data["Information"].startswith("Thank you"):
-        print("Limited usage")
-        return True
-    else:
-        return False
+    if isinstance(data, dict) and "Information" in data:
+        message = data["Information"]
+        if "rate limit" in message.lower():
+            print(f"API rate limit exceeded: {message}")
+            return True
+    return False
 
 def pretty_print(data):
     pretty_json = json.dumps(data, indent=4)
