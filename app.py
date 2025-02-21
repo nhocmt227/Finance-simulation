@@ -101,36 +101,45 @@ def register():
 
     elif request.method == "POST":
         db = get_db()
-        # Get data
+        # Get data from frontend
         username = request.form.get("username")
         password = request.form.get("password")
         password_confirmation = request.form.get("password-confirmation")
 
-        # Data validation
+        # user data validation
         if not username:
             return apology("No username found")
-        
-        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-
-        if user is not None:
-            return apology("Username existed")
+        if len(username) < 8 or len(username) > 30:
+            return apology("Username length must be from 8 to 30 characters")
         if not password:
             return apology("No password found")
+        if len(password) < 8:
+            return apology("Password length must be from 8 to 30 characters")
         if not password_confirmation:
             return apology("Must provide confirmation")
         if password != password_confirmation:
             return apology("Passwords do not match")
+        
+        # Check if username exist
+        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        if user is not None:
+            return apology("Username existed")
 
         password_hash = generate_password_hash(password)
         
-        # Save user data into database
-        db.execute(
-            "INSERT INTO users (username, hash) VALUES (?, ?)",
-            (username, password_hash)
-        )
-        db.commit()  # Commit the changes
-        
-        return redirect("/login")
+        try:
+            # Save user data into database
+            db.execute(
+                "INSERT INTO users (username, hash) VALUES (?, ?)",
+                (username, password_hash)
+            )
+            db.commit()
+            return redirect("/login")
+        except sqlite3.IntegrityError as e:
+            # This occur because UNIQUE constraint has been violated
+            return apology("Username existed")
+        except sqlite3.Error as e:
+            return apology("Unexpected error in /register")
     
     return render_template("auth/register.html")
     
@@ -156,7 +165,7 @@ def index():
 
     # Get list of distinct stocks purchased
     rows = conn.execute(
-        "SELECT DISTINCT stock_symbol FROM status WHERE user_id = ?",
+        "SELECT DISTINCT stock_symbol FROM user_stocks WHERE user_id = ?",
         (session["user_id"],)
     ).fetchall()
 
@@ -170,10 +179,10 @@ def index():
         
         # Get total shares for this stock
         total_shares_row = conn.execute(
-            "SELECT SUM(shares) as total_shares FROM status WHERE stock_symbol = ? AND user_id = ?",
+            "SELECT shares_amount FROM user_stocks WHERE stock_symbol = ? AND user_id = ?",
             (stock["symbol"], session["user_id"])
         ).fetchone()
-        stock["shares"] = total_shares_row["total_shares"]
+        stock["shares"] = total_shares_row["shares_amount"]
         stock["total"] = stock["price"] * stock["shares"]
         stocks.append(stock)
 
@@ -320,7 +329,7 @@ def sell():
     if request.method == "GET":
         return render_template("portfolio/sell.html", stocks=array_of_stocks)
     else:
-        # Validate stock symbol
+        # Validate stock symbol from frontend
         symbol = request.form.get("symbol")
         if not symbol:
             return apology("Require symbol")
@@ -329,7 +338,7 @@ def sell():
         if not stock:
             return apology("Stock not found")
 
-        # Validate shares
+        # Validate shares from frontend
         shares = request.form.get("shares")
         if not shares:
             return apology("Require shares")
@@ -342,11 +351,14 @@ def sell():
 
         # Get the user's available shares for this stock
         result = db.execute(
-            "SELECT SUM(shares) AS total_shares FROM status WHERE user_id = ? AND stock_symbol = ?", 
+            "SELECT SUM(shares) AS remaining_shares FROM status WHERE user_id = ? AND stock_symbol = ?", 
             (session["user_id"], symbol)
         ).fetchone()
+        print(result["remaining_shares"])
+        if result is None:
+            return apology("Not enough shares to sell")
+        remaining_shares = result["remaining_share"]
 
-        remaining_shares = result["total_shares"] if result and result["total_shares"] else 0
         if shares > remaining_shares:
             return apology("Not enough shares to sell")
 
