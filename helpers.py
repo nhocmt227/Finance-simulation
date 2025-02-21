@@ -7,6 +7,7 @@ import uuid
 
 from flask import redirect, render_template, session
 from functools import wraps
+from datetime import datetime
 
 
 def apology(message, code=400):
@@ -86,3 +87,12 @@ def lookup(symbol):
 def usd(value):
     """Format value as USD."""
     return f"${value:,.2f}"
+
+def time_format(time):
+    """Format DATETIME as"""
+    try:
+        time_obj = datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f")
+        return time_obj.strftime("%b %d, %Y %I:%M %p")
+    except ValueError:
+        return time
+    

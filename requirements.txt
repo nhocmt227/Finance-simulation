@@ -11,7 +11,9 @@ CREATE TABLE users (
     hash TEXT NOT NULL,
     cash NUMERIC NOT NULL DEFAULT 10000.00
 );
+
 CREATE TABLE sqlite_sequence(name,seq);
+
 CREATE TABLE history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -21,6 +23,7 @@ CREATE TABLE history (
     shares INTEGER NOT NULL,
     time DATETIME NOT NULL
 );
+
 CREATE TABLE status (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,

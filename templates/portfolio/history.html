@@ -26,7 +26,7 @@
                             <td>{{ row["stock_price"] | usd }}</td>
                             <td>{{ row["shares"] }}</td>
                             <td>{{ row["type"] }}</td>
-                            <td>{{ row["time"] }}</td>
+                            <td>{{ row["time"] | time_format }}</td>
                         </tr>
 
                     {% endfor %}

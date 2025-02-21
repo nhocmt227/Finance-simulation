@@ -5,7 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import os
 from dotenv import load_dotenv
 
-from helpers import apology, login_required, usd
+from helpers import apology, login_required, usd, time_format
 from datetime import datetime
 from db import get_db, close_db
 from API_handlers import lookup
@@ -19,8 +19,9 @@ API_KEY = os.getenv("API_KEY")
 # Configure application
 app = Flask(__name__)
 
-# Custom filter
+# Register filters with Jinja
 app.jinja_env.filters["usd"] = usd
+app.jinja_env.filters["time_format"] = time_format
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
@@ -278,7 +279,7 @@ def buy():
 def history():
     """Show history of transactions"""
     history = get_db().execute(
-        "SELECT * FROM history WHERE user_id = ?", (session["user_id"],)
+        "SELECT * FROM history WHERE user_id = ? ORDER BY time DESC", (session["user_id"],)
     ).fetchall()
     return render_template("portfolio/history.html", history=history)
 
