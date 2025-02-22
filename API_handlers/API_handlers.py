@@ -1,8 +1,5 @@
 from dotenv import load_dotenv
 import requests
-import os
-import urllib.request
-import urllib.parse
 import json
 import csv
 
