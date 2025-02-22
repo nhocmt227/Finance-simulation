@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from db.connection import get_db
 from helpers.utils import apology, login_required
 from API_handlers.API_handlers import lookup
+import sqlite3
 
 # take environment variables from .env.
 load_dotenv()  
@@ -32,6 +33,7 @@ def index():
         (session["user_id"],)
     ).fetchall()
 
+
     stocks = []
 
     for row in rows:
@@ -43,7 +45,7 @@ def index():
         # Get total shares for this stock
         total_shares_row = conn.execute(
             "SELECT shares_amount FROM user_stocks WHERE stock_symbol = ? AND user_id = ?",
-            (stock["symbol"], session["user_id"])
+            (row["stock_symbol"], session["user_id"])
         ).fetchone()
         stock["shares"] = total_shares_row["shares_amount"]
         stock["total"] = stock["price"] * stock["shares"]
