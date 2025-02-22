@@ -1,13 +1,6 @@
 flask
-sqlite3
-werkzeug.security
-pytz
+werkzeug
 requests
-uuid
 datetime
-urllib
 python-dotenv
 dotenv
-os
-json
-csv
