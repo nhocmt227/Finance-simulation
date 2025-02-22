@@ -17,13 +17,19 @@ This is a trading simulation application that allows users to simulate simple tr
 - **Database:** SQLite 🗄️
 
 ## Installation ⚙️
-
+- Make sure your computer have Python 
 ```bash
 git clone https://github.com/nhocmt227/Finance-website.git
 cd Finance-website
 pip install -r requirements.txt
-flask run
 ```
+- On MacOS or Linux: `./setup.sh`
+- On PowerShell Window: `./setup.bat`
+- Run the app `flask run`, you will see the app running in your `localhost` port `5000`
+
+## Things to note
+- The `API_KEY` inside the repo is public, limited and for testing only.
+- If you want to use your own `API_KEY`, open the `.env` file and replace the value of `API_KEY` with your personal `API_KEY`.
 
 ## Usage 🚀
 Visit `http://localhost:5000` in your browser.
