@@ -5,10 +5,9 @@
 {% endblock %}
 
 {% block main %}
-<div class="container">
-    <div class="section">
+    <div class="container-sm">
         <form action="/sell" method="post">
-            <select name="symbol">
+            <select name="symbol" class="form-select">
                 <option disabled selected value="">Stock symbol</option>
                 {% for stock in stocks %}
 
@@ -16,10 +15,11 @@
 
                 {% endfor %}
             </select>
-            <input name="shares" placeholder="Shares" autocomplete="off" type="number" min="1">
-            <button type="submit">Sell</button>
+            <br>
+            <input class="form-control" name="shares" placeholder="Shares" autocomplete="off" type="number" min="1">
+            <br>
+            <button type="submit" class="btn btn-primary">Sell</button>
         </form>
     </div>
-</div>
 
 {% endblock %}

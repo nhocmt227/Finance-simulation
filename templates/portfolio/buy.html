@@ -5,11 +5,17 @@
 {% endblock %}
 
 {% block main %}
-    <form action="/buy" method="post">
-        <input name="symbol" autofocus autocomplete="off" type="text" placeholder="Enter stock symbol">
-        <input name="shares" autocomplete="off" type="number" placeholder="Number of shares">
-        <button class="btn btn-primary" type="submit">Buy</button>
-    </form>
+    <div class="container-sm">
+        <form action="/buy" method="post">
+            <input name="symbol" class="form-control" autofocus autocomplete="off" type="text" placeholder="Enter stock symbol">
+            <br>
+            <input name="shares" class="form-control" autocomplete="off" type="number" placeholder="Number of shares">
+            <br>
+            <button class="btn btn-primary" type="submit">Buy</button>
+        </form>
+    </div>
+    
+
 {% endblock %}
 
 
