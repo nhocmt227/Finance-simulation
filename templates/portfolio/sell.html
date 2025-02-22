@@ -7,18 +7,22 @@
 {% block main %}
     <div class="container-sm">
         <form action="/sell" method="post">
-            <select name="symbol" class="form-select">
-                <option disabled selected value="">Stock symbol</option>
-                {% for stock in stocks %}
-
-                    <option>{{ stock["stock_symbol"] }}</option>
-
-                {% endfor %}
-            </select>
-            <br>
-            <input class="form-control" name="shares" placeholder="Shares" autocomplete="off" type="number" min="1">
-            <br>
-            <button type="submit" class="btn btn-primary">Sell</button>
+            <div class="d-grid gap-1.5 col-6 mx-auto">
+                <select name="symbol" class="form-select">
+                    <option disabled selected value="">Stock symbol</option>
+                    {% for stock in stocks %}
+    
+                        <option>{{ stock["stock_symbol"] }}</option>
+    
+                    {% endfor %}
+                </select>
+                <br>
+                <input class="form-control" name="shares" placeholder="Shares" autocomplete="off" type="number" min="1">
+                <br>
+            </div>
+            <div class="d-grid gap-1.5 col-3 mx-auto">
+                <button type="submit" class="btn btn-warning">Sell</button>
+            </div>
         </form>
     </div>
 

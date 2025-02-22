@@ -7,9 +7,13 @@
 {% block main %}
     <div class="container-sm">
         <form action="/quote" method="post">
-            <input class="form-control" name="symbol" autofocus autocomplete="off" type="text" placeholder="Enter stock’s symbol">
+            <div class="d-grid gap-1.5 col-6 mx-auto"> 
+                <input class="form-control" name="symbol" autofocus autocomplete="off" type="text" placeholder="Enter stock’s symbol">
+            </div>
             <br>
-            <button class="btn btn-primary" type="submit">Go</button>
+            <div class="d-grid gap-1.5 col-3 mx-auto"> 
+                <button class="btn btn-primary" type="submit">Find Stock</button>
+            </div>
         </form>
     </div>
 
