@@ -291,6 +291,12 @@ def sell():
         
         return redirect("/home")
 
+@portfolio_bp.route("/contribute", methods=["GET"])
+@login_required
+def contribute():
+    return render_template("portfolio/contribute.html")
+
+
 @portfolio_bp.route("/apologize", methods=["GET"])
 def apologize():
     return apology("This feature is being implemented!")
