@@ -1,7 +1,11 @@
 import sqlite3
 from flask import g
+from dotenv import load_dotenv
+import os
 
-DATABASE = "finance.db"
+# take environment variables from .env.
+load_dotenv()  
+DATABASE = os.getenv("DATABASE")
 
 def get_db():
     """Establish and return a database connection.
