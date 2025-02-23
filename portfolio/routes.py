@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from db.connection import get_db
 from helpers.utils import apology, login_required
 from API_handlers.API_handlers import lookup
+from exceptions.API_exception import ApiLimitError
 import sqlite3
 
 # take environment variables from .env.
@@ -23,7 +24,7 @@ def main():
     else:
         return render_template("public/index.html")
 
-@portfolio_bp.route("/home")
+@portfolio_bp.route("/home", methods=["GET"])
 @login_required
 def index():
     conn = get_db()
@@ -37,9 +38,14 @@ def index():
 
     stocks = []
 
+
     for row in rows:
         # Lookup current stock price
-        stock = lookup(row["stock_symbol"], API_KEY)
+        try:
+            stock = lookup(row["stock_symbol"], API_KEY)
+        except ApiLimitError as e:
+            return apology(f"{e.message}")
+        
         if stock is None:
             continue  # or handle error
         
@@ -51,6 +57,7 @@ def index():
         stock["shares"] = total_shares_row["shares_amount"]
         stock["total"] = stock["price"] * stock["shares"]
         stocks.append(stock)
+
 
     # Get cash balance
     # Get cash balance
@@ -80,11 +87,15 @@ def buy():
         stock_symbol = request.form.get("symbol")
         if not stock_symbol:
             return apology("No stock found")
-        stock_info = lookup(stock_symbol, API_KEY)
+        
+        try:
+            stock_info = lookup(stock_symbol, API_KEY)
+        except ApiLimitError as e:
+            return apology(f"{e.message}")
+        
         if not stock_info:
             return apology("Invalid stock symbol")
-
-        # Get number of shares
+                # Get number of shares
         buy_amount = request.form.get("shares")
         if not buy_amount:
             return apology("Must provide shares")
@@ -94,6 +105,8 @@ def buy():
                 return apology("Shares amount must be positive")
         except ValueError:
             return apology("Invalid shares amount")
+            
+
 
         # Check for remaining cash in the account
         try:
@@ -178,12 +191,15 @@ def quote():
         if not symbol:
             return apology("No symbol found")
 
-        # get stock information
-        stock_information = lookup(symbol, API_KEY)
+        try:
+            # get stock information
+            stock_information = lookup(symbol, API_KEY)
+        except ApiLimitError as e:
+            return apology(f"{e.message}")
+        
         print(stock_information)
         if stock_information is None:
             return apology("Invalid stock symbol")
-
 
         return render_template("portfolio/quoted.html", information=stock_information)
 
@@ -205,9 +221,15 @@ def sell():
         stock_symbol = request.form.get("symbol")
         if not stock_symbol:
             return apology("Require symbol")
-        stock_info = lookup(stock_symbol, API_KEY)
+        
+        try:
+            stock_info = lookup(stock_symbol, API_KEY)
+        except ApiLimitError as e:
+            return apology(f"{e.message}")
+        
         if not stock_info:
             return apology("Stock not found")
+        
 
         # Validate sell amount from frontend
         sell_amount = request.form.get("shares")

@@ -3,6 +3,8 @@ import requests
 import json
 import csv
 
+from exceptions.API_exception import ApiLimitError
+
 # Stock lookup
 def lookup(symbol, api_key):
     """
@@ -24,8 +26,8 @@ def lookup(symbol, api_key):
 
         # Check for API rate limit 
         if is_limited(data):
-            return None
-        
+            raise ApiLimitError("API Limit exceed, max 25 requests per day")
+
         if "Global Quote" in data:
             stock_data = data["Global Quote"]
         else:
@@ -47,8 +49,6 @@ def lookup(symbol, api_key):
         print(f"Missing Key in Response: {e}")
     except ValueError as e:
         print(f"Value Conversion Error: {e}")
-    except Exception as e:
-        print(f"Unexpected Error: {e}")
     return None
 
 # The size can be very big
