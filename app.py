@@ -2,7 +2,7 @@ from flask import Flask
 from flask_session import Session
 from dotenv import load_dotenv
 import os
-from db.connection import get_db, close_db
+from db.connection import close_db
 from auth.routes import auth_bp
 from portfolio.routes import portfolio_bp
 from helpers.utils import usd, time_format

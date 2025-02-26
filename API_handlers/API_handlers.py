@@ -1,9 +1,17 @@
 from dotenv import load_dotenv
+import os
 import requests
 import json
 import csv
+from datetime import datetime
 
 from exceptions.API_exception import ApiLimitError
+from db.connection import get_db
+
+# take environment variables from .env.
+load_dotenv()  
+# Retrieve the API key
+API_TIME_TO_UPDATE = int(os.getenv("API_TIME_TO_UPDATE"))
 
 # Stock lookup
 def lookup(symbol, api_key):
@@ -15,7 +23,24 @@ def lookup(symbol, api_key):
     Returns:
         a dictionary contains 2 keys about the stock: "symbol" and "price"
     """
+
+    print(API_TIME_TO_UPDATE)
     symbol = symbol.upper()
+    conn = get_db()
+
+    stock_row = conn.execute(
+        "SELECT * FROM stock_status WHERE stock_symbol = ?",
+        (symbol,)
+    ).fetchone()
+
+    now = datetime.now()
+    print(now)
+
+    if stock_row is not None:
+        stock_price_time = stock_row["time"]
+        if (datetime.now() - stock_price_time <= API_TIME_TO_UPDATE):
+            return {"symbol": stock_row["stock_symbol"], "price": stock_row["stock_price"]}
+
     url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}'
     try:
         response = requests.get(url, timeout=5)
@@ -39,7 +64,22 @@ def lookup(symbol, api_key):
         symbol = stock_data.get("01. symbol")
         price = float(stock_data.get("05. price", 0))  # Convert safely to float
 
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor = conn.execute("SELECT 1 FROM stock_status WHERE stock_symbol = ?", (symbol,))
+        row = cursor.fetchone()
+
+        if row:
+            # Update if it exists
+            conn.execute("UPDATE stock_status SET stock_price = ?, time = ? WHERE stock_symbol = ?", (price, now, symbol))
+        else:
+            # Insert if it does not exist
+            conn.execute("INSERT INTO stock_status (stock_symbol, stock_price, time) VALUES (?, ?, ?)", (symbol, price, now))
+
+        conn.commit()
+
         return {"symbol": symbol, "price": price}
+    
     except requests.exceptions.Timeout:
         print("Error: Request timed out.")
         return {"error": "Request timed out. Try again later."}

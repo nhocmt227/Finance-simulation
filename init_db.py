@@ -41,7 +41,17 @@ def create_tables():
             shares_amount INTEGER NOT NULL CHECK (shares_amount > 0),
             PRIMARY KEY (user_id, stock_symbol),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );""")
+        );
+        
+        CREATE TABLE IF NOT EXISTS stock_status (
+            stock_symbol TEXT NOT NULL PRIMARY KEY,
+            stock_price NUMERIC NOT NULL,
+            time DATETIME NOT NULL 
+        );
+                      
+         
+        
+                            """)
     
     connection.commit()
     connection.close()

@@ -43,6 +43,7 @@ def index():
         # Lookup current stock price
         try:
             stock = lookup(row["stock_symbol"], API_KEY)
+            print(row["stock_symbol"])
         except ApiLimitError as e:
             return apology(f"{e.message}")
         
@@ -256,58 +257,50 @@ def sell():
             return apology("Not enough shares to sell")
 
         try:
-            # Start a transaction
-            db.execute("BEGIN TRANSACTION")
-            
-            if sell_amount == remaining_shares:
+            with db:  # This automatically starts and commits a transaction
+                if sell_amount == remaining_shares:
+                    db.execute(
+                        "DELETE FROM user_stocks WHERE user_id = ? AND stock_symbol = ?", 
+                        (session["user_id"], stock_symbol)
+                    )
+                else:
+                    new_shares = remaining_shares - sell_amount
+                    # Update stock holdings (subtract shares)
+                    db.execute(
+                        "UPDATE user_stocks SET shares_amount = ? WHERE user_id = ? AND stock_symbol = ?",
+                        (new_shares, session["user_id"], stock_symbol),
+                    )
+                # Get user's current cash balance
+                user_cash = db.execute(
+                    "SELECT cash FROM users WHERE id = ?", 
+                    (session["user_id"],)
+                ).fetchone()
+
+                if not user_cash:
+                    raise sqlite3.Error("User not found")
+
+                current_cash = float(user_cash["cash"])
+                amount_sell = stock_info["price"] * sell_amount
+                updated_cash = current_cash + amount_sell
+                    
+                # Update user's cash
                 db.execute(
-                    "DELETE FROM user_stocks WHERE user_id = ? AND stock_symbol = ?", 
-                    (session["user_id"], stock_symbol)
+                    "UPDATE users SET cash = ? WHERE id = ?", 
+                    (updated_cash, session["user_id"])
                 )
-            else:
-                new_shares = remaining_shares - sell_amount
-                # Update stock holdings (subtract shares)
+
+                # Update transaction history
                 db.execute(
-                    "UPDATE user_stocks SET shares_amount = ? WHERE user_id = ? AND stock_symbol = ?",
-                    (new_shares, session["user_id"], stock_symbol),
+                    "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, time) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (session["user_id"], "sell", stock_symbol, stock_info["price"], sell_amount, datetime.now()),
                 )
-            # Get user's current cash balance
-            user_cash = db.execute(
-                "SELECT cash FROM users WHERE id = ?", 
-                (session["user_id"],)
-            ).fetchone()
-
-            if not user_cash:
-                db.rollback()
-                return apology("User not found")
-
-            current_cash = float(user_cash["cash"])
-            amount_sell = stock_info["price"] * sell_amount
-            updated_cash = current_cash + amount_sell
-                
-            # Update user's cash
-            db.execute(
-                "UPDATE users SET cash = ? WHERE id = ?", 
-                (updated_cash, session["user_id"])
-            )
-
-            # Update transaction history
-            db.execute(
-                "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, time) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (session["user_id"], "sell", stock_symbol, stock_info["price"], sell_amount, datetime.now()),
-            )
-
-            # Commit the transaction
-            db.execute("COMMIT")
 
         except sqlite3.Error as e:
-            db.rollback()
             print(f"Error: {e}")
             return apology(f"Transaction failed: /sell")
         
         except sqlite3.IntegrityError as e:
-            db.rollback()
             print(f"Error: {e}")
             return apology(f"Transaction failed: /sell")
         
