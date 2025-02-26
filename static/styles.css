@@ -58,3 +58,11 @@ table td {
 tbody tr:nth-of-type(odd) {
     background-color: rgb(179, 208, 255, 0.3)
 }
+
+.buy-type {
+    background-color: #F7CFD8;
+}
+
+.sell-type {
+    background-color: #A0C878;
+}

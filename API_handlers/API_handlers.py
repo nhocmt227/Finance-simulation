@@ -31,7 +31,7 @@ def lookup(symbol, api_key):
         if "Global Quote" in data:
             stock_data = data["Global Quote"]
         else:
-            stock_data = None
+            stock_data = None   
 
         if is_invalid(stock_data):
             return None

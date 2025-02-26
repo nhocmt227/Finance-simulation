@@ -11,9 +11,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Symbol</th>
-                        <th>Price</th>
-                        <th>Shares</th>
+                        <th>Stock Symbol</th>
+                        <th>Purchased Price</th>
+                        <th>Amount</th>
                         <th>Type</th>
                         <th>Time</th>
                     </tr>
@@ -24,8 +24,16 @@
                         <tr>
                             <td>{{ row["stock_symbol"] }}</td>
                             <td>{{ row["stock_price"] | usd }}</td>
-                            <td>{{ row["shares"] }}</td>
-                            <td>{{ row["type"] }}</td>
+                            <td>{{ row["shares_amount"] }}</td>
+
+                            {% if row["type"] == "buy" %}
+                                <td class="buy-type">Buy</td>
+
+                            {% elif row["type"] == "sell" %}
+                                <td class="sell-type">Sell</td>
+
+                            {% endif %}
+
                             <td>{{ row["time"] | time_format }}</td>
                         </tr>
 
