@@ -16,7 +16,7 @@ This is a trading simulation application that allows users to simulate simple tr
 - **Database:** SQLite 🗄️
 
 ## Installation ⚙️
-- Make sure your computer have Python 
+- Make sure your computer have Python, pip and SQLite
 ```bash
 git clone https://github.com/nhocmt227/Finance-website.git
 cd Finance-website
