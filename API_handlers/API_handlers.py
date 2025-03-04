@@ -3,7 +3,7 @@ import os
 import requests
 import json
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from exceptions.API_exception import ApiLimitError
 from db.connection import get_db
@@ -38,7 +38,14 @@ def lookup(symbol, api_key):
 
     if stock_row is not None:
         stock_price_time = stock_row["time"]
-        if (datetime.now() - stock_price_time <= API_TIME_TO_UPDATE):
+
+        # Convert stock_price_time from string to datetime
+        stock_price_time = datetime.strptime(stock_price_time, "%Y-%m-%d %H:%M:%S")
+
+        # Convert API_TIME_TO_UPDATE from int (seconds) to timedelta
+        update_threshold = timedelta(seconds=API_TIME_TO_UPDATE)
+
+        if ((datetime.now() - stock_price_time) <= update_threshold):
             return {"symbol": stock_row["stock_symbol"], "price": stock_row["stock_price"]}
 
     url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}'
