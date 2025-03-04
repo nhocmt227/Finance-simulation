@@ -25,6 +25,8 @@ pip install -r requirements.txt
 - On MacOS or Linux: `./setup.sh`
 - On PowerShell Window: `./setup.bat`
 
+## Video demo: https://www.youtube.com/watch?v=M0qMXj7qQoY
+
 ## Usage 🚀
 - Run the app `flask run`, you will see the app running in your `localhost` port `5000`
 - Visit `http://localhost:5000` in your browser.
