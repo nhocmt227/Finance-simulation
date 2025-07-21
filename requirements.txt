@@ -6,3 +6,4 @@ python-dotenv
 dotenv
 flask_session
 timedelta
+pyyaml
