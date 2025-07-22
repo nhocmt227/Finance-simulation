@@ -14,4 +14,4 @@ echo "DATABASE=finance.db" >> .env
 echo "API_TIME_TO_UPDATE=86400" >> .env
 
 # Initialize the database
-python init_db.py
+python setup/init_db.py
