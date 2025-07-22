@@ -9,5 +9,8 @@ echo API_KEY=892RLERUEOGSNP0C >> .env
 echo DATABASE = "finance.db" >> .env
 echo API_TIME_TO_UPDATE = "86400" >> .env
 
+:: Set PYTHONPATH so Python can find the internal package
+set PYTHONPATH=.
+
 :: initialize the database
 python setup/init_db.py
