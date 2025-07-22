@@ -1,7 +1,5 @@
 import unittest
-from internal.server.config.config import Config, App  # Add other classes as you define them
 from internal.server.config.config import CONFIG
-import os
 
 class TestConfigClasses(unittest.TestCase):
 

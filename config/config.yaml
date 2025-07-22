@@ -9,6 +9,11 @@ database:
   db_type: sqlite
   timeout_second: 30
 
+core:
+  logger:
+    level: INFO
+    filename: server.log
+
 api:
   time_to_update_second: 86400
 

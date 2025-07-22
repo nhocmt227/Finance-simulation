@@ -15,6 +15,10 @@ def test_config_values():
     print(f"Type: {CONFIG.database.db_type}")
     print(f"Timeout: {CONFIG.database.timeout_second}\n")
 
+    print("[Core Config]")
+    print(f"Logger Level: {CONFIG.core.logger.level}")
+    print(f"Logger Filename: {CONFIG.core.logger.filename}\n")
+
     print("[API Config]")
     print(f"Time to update: {CONFIG.api.time_to_update_second}")
 

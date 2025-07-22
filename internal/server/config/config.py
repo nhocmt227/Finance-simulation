@@ -3,9 +3,10 @@ import yaml
 import re
 
 class Config:
-    def __init__(self, app, database, api, test):
+    def __init__(self, app, database, core, api, test):
         self.app = app
         self.database = database
+        self.core = core
         self.api = api
         self.test = test
 
@@ -22,6 +23,10 @@ class Database:
         self.db_type = db_type
         self.timeout_second = timeout_second
 
+class Core:
+    def __init__(self, logger):
+        self.logger = logger
+
 class Api:
     def __init__(self, time_to_update_second):
         self.time_to_update_second = time_to_update_second
@@ -32,6 +37,11 @@ class Test:
         self.mock_string = mock_string
         self.mock_integer = mock_integer
         self.mock_float = mock_float
+
+class Logger:
+    def __init__(self, level, filename):
+        self.level = level
+        self.filename = filename
 
 CONFIG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../config/config.yaml'))
 ENV_VAR_PATTERN = re.compile(r"\$\{([^}]+)\}")
@@ -65,6 +75,7 @@ with open(CONFIG_PATH, 'r') as f:
 CONFIG = Config(
     app=App(**raw_config.get('app', {})),
     database=Database(**raw_config.get('database', {})),
+    core=Core(logger=Logger(**raw_config.get('core', {}).get('logger', {}))),
     api=Api(**raw_config.get('api', {})),
     test=Test(**raw_config.get('test', {})),
 )
