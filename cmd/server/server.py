@@ -2,10 +2,10 @@ from flask import Flask
 from flask_session import Session
 from dotenv import load_dotenv
 import os
-from db.connection import close_db
-from auth.routes import auth_bp
-from portfolio.routes import portfolio_bp
-from helpers.utils import usd, time_format
+from internal.server.model.sqlite_connection import close_db
+from internal.server.routes.auth.auth_routes import auth_bp
+from internal.server.routes.portfolio.portforlio_routes import portfolio_bp
+from internal.server.utils.utils import usd, time_format
 
 # take environment variables from .env.
 load_dotenv()  
@@ -13,7 +13,10 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 
 # Configure application
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/templates')),
+)
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
