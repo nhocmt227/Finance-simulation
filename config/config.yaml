@@ -1,12 +1,13 @@
 app:
   host: localhost
   port: 5000
+  url: http://localhost:5000
   debug: true
 
 database:
-  name: finance.db
-  type: sqlite
-  timeout: 30s
+  db_name: finance.db
+  db_type: sqlite
+  timeout_second: 30
 
 api:
-  time_to_update: 86400s
+  time_to_update_second: 86400
