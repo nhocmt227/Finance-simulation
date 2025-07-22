@@ -1,13 +1,11 @@
 import sqlite3
 import os
 from dotenv import load_dotenv
+from internal.server.config.config import CONFIG
 
-# take environment variables from .env.
-load_dotenv()  
-DATABASE = os.getenv("DATABASE")
-
-if not DATABASE:
-    raise ValueError("DATABASE environment variable is not set")
+db_folder = os.path.abspath("db")
+db_name = CONFIG.database.db_name or "finance.db"
+DATABASE = os.path.join(db_folder, db_name)
 
 def create_tables():
     connection = sqlite3.connect(DATABASE)
