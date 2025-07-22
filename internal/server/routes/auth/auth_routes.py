@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, redirect, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from db.connection import get_db, close_db
-from helpers.utils import apology, login_required
+from internal.server.model.sqlite_connection import get_db, close_db
+from internal.server.utils.utils import apology, login_required
 import sqlite3
 
 auth_bp = Blueprint("auth", __name__)

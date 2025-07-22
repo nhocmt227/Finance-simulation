@@ -3,10 +3,10 @@ from flask import Blueprint, render_template, request, redirect, session
 from datetime import datetime
 from dotenv import load_dotenv
 
-from db.connection import get_db
-from helpers.utils import apology, login_required
-from API_handlers.API_handlers import lookup
-from exceptions.API_exception import ApiLimitError
+from internal.server.model.sqlite_connection import get_db
+from internal.server.utils.utils import apology, login_required
+from internal.server.api.API_handlers import lookup
+from internal.server.utils.exception import ApiLimitError
 import sqlite3
 
 # take environment variables from .env.
