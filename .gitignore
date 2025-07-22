@@ -31,8 +31,6 @@ flask_session/
 
 # Logs
 *.log
-log/
-logs/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
