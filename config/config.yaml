@@ -11,3 +11,9 @@ database:
 
 api:
   time_to_update_second: 86400
+
+test:
+  mock_boolean: true
+  mock_string: test_finance.db
+  mock_integer: 42
+  mock_float: 3.14
