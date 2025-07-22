@@ -7,3 +7,5 @@ dotenv
 flask_session
 timedelta
 pyyaml
+diot
+pytest
