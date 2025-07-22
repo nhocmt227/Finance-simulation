@@ -1,4 +1,5 @@
 from internal.server.config.config import CONFIG
+from internal.core.logger.logger import logger
 
 def test_config_values():
     print("==== Testing Config Values ====\n")
@@ -17,5 +18,13 @@ def test_config_values():
     print("[API Config]")
     print(f"Time to update: {CONFIG.api.time_to_update_second}")
 
+def test_logger():
+    logger.info("This is an info message for testing.")
+    logger.error("This is an error message for testing.")
+    logger.warning("This is a warning message for testing.")
+    logger.debug("This is a debug message for testing.")
+    logger.critical("This is a critical message for testing.")
+
 if __name__ == "__main__":
     test_config_values()
+    test_logger()
