@@ -16,6 +16,7 @@ API_KEY = os.getenv("API_KEY")
 app = Flask(
     __name__,
     template_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/templates')),
+    static_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/static'))
 )
 
 # Configure session to use filesystem (instead of signed cookies)
