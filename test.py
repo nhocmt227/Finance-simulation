@@ -1,5 +1,6 @@
 from internal.server.config.config import CONFIG
 from internal.core.logger.logger import logger
+import internal.core.bugger.bugger as bugger
 
 def test_config_values():
     print("==== Testing Config Values ====\n")
@@ -29,6 +30,15 @@ def test_logger():
     logger.debug("This is a debug message for testing.")
     logger.critical("This is a critical message for testing.")
 
+def test_bugger():
+    bugger.log_bug({
+        "error": "userID not found",
+        "user_id": "12345",
+        "action": "fetch_profile",
+        "module": "UserService"
+    })
+
 if __name__ == "__main__":
     test_config_values()
     test_logger()
+    test_bugger()

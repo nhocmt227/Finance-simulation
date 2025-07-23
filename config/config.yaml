@@ -13,6 +13,8 @@ core:
   logger:
     level: INFO
     filename: server.log
+  bugger:
+    filename: bugs.log
 
 api:
   time_to_update_second: 86400

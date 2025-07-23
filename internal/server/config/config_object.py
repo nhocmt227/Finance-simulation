@@ -20,8 +20,9 @@ class Database:
         self.timeout_second = timeout_second
 
 class Core:
-    def __init__(self, logger):
+    def __init__(self, logger, bugger):
         self.logger = logger
+        self.bugger = bugger
 
 class Api:
     def __init__(self, time_to_update_second):
@@ -37,4 +38,8 @@ class Test:
 class Logger:
     def __init__(self, level, filename):
         self.level = level
+        self.filename = filename
+
+class Bugger:
+    def __init__(self, filename):
         self.filename = filename

@@ -1,7 +1,7 @@
 import os
 import yaml
 import re
-from internal.server.config.config_object import Config, App, Database, Core, Api, Test, Logger
+from internal.server.config.config_object import Config, App, Database, Core, Api, Test, Logger, Bugger
 
 CONFIG_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../config/config.yaml'))
 ENV_VAR_PATTERN = re.compile(r"\$\{([^}]+)\}")
@@ -35,7 +35,10 @@ with open(CONFIG_PATH, 'r') as f:
 CONFIG = Config(
     app=App(**raw_config.get('app', {})),
     database=Database(**raw_config.get('database', {})),
-    core=Core(logger=Logger(**raw_config.get('core', {}).get('logger', {}))),
+    core=Core(
+        logger=Logger(**raw_config.get('core', {}).get('logger', {})),
+        bugger=Bugger(**raw_config.get('core', {}).get('bugger', {}))
+    ),
     api=Api(**raw_config.get('api', {})),
     test=Test(**raw_config.get('test', {})),
 )
