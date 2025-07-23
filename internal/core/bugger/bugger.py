@@ -22,7 +22,7 @@ if not bugger.hasHandlers():
     
     bugger.addHandler(handler)
 
-def log_bug(metadata):
+def _log_bug(metadata):
     """
     Logs an error with timestamp and metadata into the bugs.log file.
     
@@ -35,3 +35,6 @@ def log_bug(metadata):
         message = str(metadata)
 
     bugger.error(message)
+
+# Attach the function as a method of the logger
+bugger.log_bug = _log_bug
