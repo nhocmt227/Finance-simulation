@@ -2,6 +2,9 @@ from internal.server.config.config import CONFIG
 from internal.core.logger.logger import logger
 import internal.core.bugger.bugger as bugger
 
+# --- This file is extremely temporary ---
+# --- TODO: Add proper integration test in place of this file ---
+
 def test_config_values():
     print("==== Testing Config Values ====\n")
 
