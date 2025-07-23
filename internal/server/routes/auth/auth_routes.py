@@ -3,6 +3,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from internal.server.model.sqlite_connection import get_db, close_db
 from internal.server.utils.utils import apology, login_required
+from internal.core.logger.logger import logger
+from internal.core.bugger.bugger import bugger
 import sqlite3
 
 auth_bp = Blueprint("auth", __name__)
@@ -24,27 +26,32 @@ def login():
     
     # User reached route via POST (as by submitting a form via POST)
     else:
-        # Ensure username was submitted
-        if not request.form.get("username"):
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if not username:
             return apology("must provide username", 403)
 
-        # Ensure password was submitted
-        if not request.form.get("password"):
+        if not password:
             return apology("must provide password", 403)
 
         # Query database for username
-        rows = get_db().execute(
-            "SELECT * FROM users WHERE username = ?", (request.form.get("username"),)
-        ).fetchall()
+        try:
+            rows = get_db().execute(
+                "SELECT * FROM users WHERE username = ?", (username,)
+            ).fetchall()
+        except sqlite3.Error as e:
+            logger.error(f"Database error during login for user '{username}': {e}")
+            bugger.log_bug(f"Database error during login for user '{username}': {e}")
+            return apology("Unexpected error during login", 500)
 
         # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(
-            rows[0]["hash"], request.form.get("password")
-        ):
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password):
             return apology("invalid username and/or password", 403)
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
+        logger.info(f"User logged in: {username} (user_id={rows[0]['id']})")
 
         # Redirect user to home page
         return redirect("/home")
@@ -58,7 +65,6 @@ def register():
 
     elif request.method == "POST":
         db = get_db()
-        # Get data from frontend
         username = request.form.get("username")
         password = request.form.get("password")
         password_confirmation = request.form.get("password-confirmation")
@@ -78,7 +84,13 @@ def register():
             return apology("Passwords do not match")
         
         # Check if username exist
-        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        try:
+            user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        except sqlite3.Error as e:
+            logger.error(f"Database error checking user existence: {e}")
+            bugger.log_bug(f"Database error checking user existence: {e}")
+            return apology("Unexpected error during registration", 500)
+
         if user is not None:
             return apology("Username existed")
 
@@ -91,13 +103,18 @@ def register():
                 (username, password_hash)
             )
             db.commit()
+            logger.info(f"User registered successfully: {username}")
             return redirect("/login")
         except sqlite3.IntegrityError as e:
             # This occur because UNIQUE constraint has been violated
-            print(f"Error: {e}")
+            logger.warning(f"Integrity error registering '{username}': {e}")
             return apology("Username existed")
         except sqlite3.Error as e:
-            print(f"Error: {e}")
+            bugger.log_bug({
+                "error": "Registration DB failure",
+                "username": username,
+                "details": str(e)
+            })
             return apology("Unexpected error in /register")
     
     return render_template("auth/register.html")
@@ -106,6 +123,10 @@ def register():
 @auth_bp.route("/logout")
 def logout():
     """Log user out"""
+
+    user_id = session.get("user_id")
+    if user_id:
+        logger.info(f"User logged out: user_id={user_id}")
 
     # Forget any user_id
     session.clear()
