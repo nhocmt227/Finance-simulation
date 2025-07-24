@@ -1,28 +1,26 @@
 {% extends "layouts/layout.html" %}
-
-{% block title %}
-    Buy
-{% endblock %}
-
+{% block title %}Buy{% endblock %}
 {% block main %}
     <div class="container-sm">
         <form action="/buy" method="post">
             <div class="d-grid gap-1.5 col-6 mx-auto">
-                <input name="symbol" class="form-control" autofocus autocomplete="off" type="text" placeholder="Enter stock symbol">
+                <input name="symbol"
+                       class="form-control"
+                       autofocus
+                       autocomplete="off"
+                       type="text"
+                       placeholder="Enter stock symbol">
                 <br>
-                <input name="shares" class="form-control" autocomplete="off" type="number" placeholder="Number of shares">
+                <input name="shares"
+                       class="form-control"
+                       autocomplete="off"
+                       type="number"
+                       placeholder="Number of shares">
                 <br>
-                
             </div>
             <div class="d-grid gap-1.5 col-3 mx-auto">
                 <button class="btn btn-success" type="submit">Buy</button>
             </div>
-            
-
         </form>
     </div>
-    
-
 {% endblock %}
-
-

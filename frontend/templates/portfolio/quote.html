@@ -1,20 +1,20 @@
 {% extends "layouts/layout.html" %}
-
-{% block title %}
-    Quote
-{% endblock %}
-
+{% block title %}Quote{% endblock %}
 {% block main %}
     <div class="container-sm">
         <form action="/quote" method="post">
-            <div class="d-grid gap-1.5 col-6 mx-auto"> 
-                <input class="form-control" name="symbol" autofocus autocomplete="off" type="text" placeholder="Enter stock’s symbol">
+            <div class="d-grid gap-1.5 col-6 mx-auto">
+                <input class="form-control"
+                       name="symbol"
+                       autofocus
+                       autocomplete="off"
+                       type="text"
+                       placeholder="Enter stock’s symbol">
             </div>
             <br>
-            <div class="d-grid gap-1.5 col-3 mx-auto"> 
+            <div class="d-grid gap-1.5 col-3 mx-auto">
                 <button class="btn btn-primary" type="submit">Find Stock</button>
             </div>
         </form>
     </div>
-
 {% endblock %}

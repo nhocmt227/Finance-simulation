@@ -10,3 +10,4 @@ pyyaml
 diot
 pytest
 black
+djlint

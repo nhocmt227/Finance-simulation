@@ -1,23 +1,20 @@
 {% extends "layouts/layout.html" %}
-
-{% block title %}
-    Sell
-{% endblock %}
-
+{% block title %}Sell{% endblock %}
 {% block main %}
     <div class="container-sm">
         <form action="/sell" method="post">
             <div class="d-grid gap-1.5 col-6 mx-auto">
                 <select name="symbol" class="form-select">
                     <option disabled selected value="">Stock symbol</option>
-                    {% for stock in stocks %}
-    
-                        <option>{{ stock["stock_symbol"] }}</option>
-    
-                    {% endfor %}
+                    {% for stock in stocks %}<option>{{ stock["stock_symbol"] }}</option>{% endfor %}
                 </select>
                 <br>
-                <input class="form-control" name="shares" placeholder="Shares" autocomplete="off" type="number" min="1">
+                <input class="form-control"
+                       name="shares"
+                       placeholder="Shares"
+                       autocomplete="off"
+                       type="number"
+                       min="1">
                 <br>
             </div>
             <div class="d-grid gap-1.5 col-3 mx-auto">
@@ -25,5 +22,4 @@
             </div>
         </form>
     </div>
-
 {% endblock %}
