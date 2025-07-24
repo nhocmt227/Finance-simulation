@@ -65,7 +65,11 @@ def register():
         return render_template("auth/register.html")
 
     elif request.method == "POST":
-        db = get_db()
+        try:
+            db = get_db()
+        except sqlite3.Error:
+            return apology("Database connection error", 500)
+
         username = request.form.get("username")
         password = request.form.get("password")
         password_confirmation = request.form.get("password-confirmation")

@@ -1,5 +1,4 @@
 from dotenv import load_dotenv
-import os
 import requests
 import json
 import csv
@@ -7,11 +6,12 @@ from datetime import datetime, timedelta
 
 from internal.server.utils.exception import ApiLimitError
 from internal.server.model.sqlite_connection import get_db
+from internal.server.config.config import CONFIG
 
 # take environment variables from .env.
 load_dotenv()
 # Retrieve the API key
-API_TIME_TO_UPDATE = int(os.getenv("API_TIME_TO_UPDATE"))
+API_TIME_TO_UPDATE = CONFIG.api.time_to_update_second
 
 
 # Stock lookup
