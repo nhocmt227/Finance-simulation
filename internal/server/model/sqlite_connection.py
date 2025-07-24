@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 import os
 
 # take environment variables from .env.
-load_dotenv()  
+load_dotenv()
 DATABASE = os.getenv("DATABASE")
+
 
 def get_db():
     """Establish and return a database connection.
@@ -18,6 +19,7 @@ def get_db():
         g.db = sqlite3.connect(DATABASE, detect_types=sqlite3.PARSE_DECLTYPES)
         g.db.row_factory = sqlite3.Row  # Enables dictionary-like row access
     return g.db
+
 
 def close_db(exception=None):
     """Close the database connection at the end of the request."""

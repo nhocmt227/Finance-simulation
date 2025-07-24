@@ -27,7 +27,10 @@ def apology(message, code=400):
             s = s.replace(old, new)
         return s
 
-    return render_template("errors/apology.html", top=code, bottom=escape(message)), code
+    return (
+        render_template("errors/apology.html", top=code, bottom=escape(message)),
+        code,
+    )
 
 
 def login_required(f):
@@ -83,6 +86,7 @@ def usd(value):
     """Format value as USD."""
     return f"${value:,.2f}"
 
+
 def time_format(time):
     """Format DATETIME as"""
     try:
@@ -90,4 +94,3 @@ def time_format(time):
         return time_obj.strftime("%b %d, %Y %I:%M %p")
     except ValueError:
         return time
-    

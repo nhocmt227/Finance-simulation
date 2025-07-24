@@ -9,3 +9,4 @@ timedelta
 pyyaml
 diot
 pytest
+black

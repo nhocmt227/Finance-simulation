@@ -7,6 +7,7 @@ db_folder = os.path.abspath("db")
 db_name = CONFIG.database.db_name or "finance.db"
 DATABASE = os.path.join(db_folder, db_name)
 
+
 def create_tables():
     connection = sqlite3.connect(DATABASE)
     cursor = connection.cursor()
@@ -14,7 +15,8 @@ def create_tables():
     # Enable foreign key constraints
     cursor.execute("PRAGMA foreign_keys = ON;")
 
-    cursor.executescript("""
+    cursor.executescript(
+        """
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
@@ -49,10 +51,12 @@ def create_tables():
                       
          
         
-                            """)
-    
+                            """
+    )
+
     connection.commit()
     connection.close()
+
 
 if __name__ == "__main__":
     create_tables()

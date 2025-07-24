@@ -12,11 +12,12 @@ from internal.core.bugger.bugger import bugger
 import sqlite3
 
 # take environment variables from .env.
-load_dotenv()  
+load_dotenv()
 # Retrieve the API key
 API_KEY = os.getenv("API_KEY")
 
 portfolio_bp = Blueprint("portfolio", __name__)
+
 
 @portfolio_bp.route("/", methods=["GET"])
 def main():
@@ -25,6 +26,7 @@ def main():
         return redirect("/home")
     else:
         return render_template("public/index.html")
+
 
 @portfolio_bp.route("/home", methods=["GET"])
 @login_required
@@ -36,14 +38,13 @@ def index():
     try:
         rows = conn.execute(
             "SELECT DISTINCT stock_symbol FROM user_stocks WHERE user_id = ?",
-            (session["user_id"],)
+            (session["user_id"],),
         ).fetchall()
     except sqlite3.Error as e:
         logger.error(f"Database error when fetching distinct stocks: {e}")
         return apology("Could not retrieve portfolio.")
 
     stocks = []
-
 
     for row in rows:
         # Lookup current stock price
@@ -54,14 +55,14 @@ def index():
             logger.warning(f"API limit hit: {e.message}")
             return apology(f"{e.message}")
         except Exception as e:
-            bugger.log("unknown error during stock lookup in /home [GET]")
+            logger.error("unknown error during stock lookup in /home [GET]")
             continue
-        
+
         # Get total shares for this stock
         try:
             total_shares_row = conn.execute(
                 "SELECT shares_amount FROM user_stocks WHERE stock_symbol = ? AND user_id = ?",
-                (row["stock_symbol"], session["user_id"])
+                (row["stock_symbol"], session["user_id"]),
             ).fetchone()
         except sqlite3.Error as e:
             logger.error(f"Failed to fetch shares amount: {e}")
@@ -74,8 +75,7 @@ def index():
     # Get cash balance
     try:
         cash_row = conn.execute(
-            "SELECT cash FROM users WHERE id = ?",
-            (session["user_id"],)
+            "SELECT cash FROM users WHERE id = ?", (session["user_id"],)
         ).fetchone()
         cash_balance = cash_row["cash"]
     except sqlite3.Error as e:
@@ -84,8 +84,13 @@ def index():
 
     # Calculate grand total (cash + total value of stocks)
     grand_total = cash_balance + sum(stock["total"] for stock in stocks)
-    
-    return render_template("portfolio/home.html", stocks=stocks, cash_balance=cash_balance, grand_total=grand_total)
+
+    return render_template(
+        "portfolio/home.html",
+        stocks=stocks,
+        cash_balance=cash_balance,
+        grand_total=grand_total,
+    )
 
 
 @portfolio_bp.route("/buy", methods=["GET", "POST"])
@@ -96,13 +101,13 @@ def buy():
 
     if request.method == "GET":
         return render_template("portfolio/buy.html")
-    
+
     else:
         # Get stock info from form
         stock_symbol = request.form.get("symbol")
         if not stock_symbol:
             return apology("No stock found")
-        
+
         try:
             stock_info = lookup(stock_symbol, API_KEY)
             if not stock_info:
@@ -111,9 +116,9 @@ def buy():
             logger.warning(f"API limit hit during buy: {e.message}")
             return apology(f"{e.message}")
         except Exception as e:
-            bugger.log("bug during stock lookup in /buy [POST]")
+            logger.error("bug during stock lookup in /buy [POST]")
             return apology("Something went wrong.")
-        
+
         buy_amount = request.form.get("shares")
         if not buy_amount:
             return apology("Must provide shares")
@@ -123,16 +128,16 @@ def buy():
                 return apology("Shares amount must be positive")
         except ValueError:
             return apology("Invalid shares amount")
-            
-
 
         # Check for remaining cash in the account
         try:
-            user = db.execute("SELECT cash FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+            user = db.execute(
+                "SELECT cash FROM users WHERE id = ?", (session["user_id"],)
+            ).fetchone()
             if not user:
                 bugger.log("User not found during buy.")
                 return apology("User not found")
-            remaining_cash = float(user["cash"])  
+            remaining_cash = float(user["cash"])
         except Exception as e:
             logger.error(f"Error accessing user cash: {e}")
             return apology("Unexpected error")
@@ -172,27 +177,42 @@ def buy():
             db.execute(
                 "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, time) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
-                (session["user_id"], "buy", stock_info["symbol"], stock_info["price"], buy_amount, datetime.now()),
+                (
+                    session["user_id"],
+                    "buy",
+                    stock_info["symbol"],
+                    stock_info["price"],
+                    buy_amount,
+                    datetime.now(),
+                ),
             )
 
             db.execute("COMMIT")
-            logger.info(f"User {session['user_id']} bought {buy_amount} shares of {stock_info['symbol']}.")
-        except sqlite3.Error as e: 
+            logger.info(
+                f"User {session['user_id']} bought {buy_amount} shares of {stock_info['symbol']}."
+            )
+        except sqlite3.Error as e:
             db.rollback()
             logger.error(f"Transaction failed during buy: {e}")
             return apology(f"Transaction failed, /buy")
-        
+
         # Redirect to main page
         return redirect("/")
+
 
 @portfolio_bp.route("/history")
 @login_required
 def history():
     """Show history of transactions"""
     try:
-        history_logs = get_db().execute(
-            "SELECT * FROM history_logs WHERE user_id = ? ORDER BY time DESC", (session["user_id"],)
-        ).fetchall()
+        history_logs = (
+            get_db()
+            .execute(
+                "SELECT * FROM history_logs WHERE user_id = ? ORDER BY time DESC",
+                (session["user_id"],),
+            )
+            .fetchall()
+        )
         logger.info(f"Transaction history retrieved for user_id={session['user_id']}.")
     except sqlite3.Error as e:
         logger.error(f"Failed to retrieve transaction history: {e}")
@@ -223,10 +243,8 @@ def quote():
         except Exception as e:
             logger.error(f"Quote lookup error: {e}")
             return apology("Something went wrong")
-        
+
         return render_template("portfolio/quoted.html", information=stock_information)
-
-
 
 
 @portfolio_bp.route("/sell", methods=["GET", "POST"])
@@ -238,8 +256,8 @@ def sell():
     if request.method == "GET":
         try:
             array_of_stocks = db.execute(
-                "SELECT DISTINCT stock_symbol FROM user_stocks WHERE user_id = ?", 
-                (session["user_id"],)
+                "SELECT DISTINCT stock_symbol FROM user_stocks WHERE user_id = ?",
+                (session["user_id"],),
             ).fetchall()
         except sqlite3.Error as e:
             logger.error(f"Error fetching stocks for sell page: {e}")
@@ -250,7 +268,7 @@ def sell():
         stock_symbol = request.form.get("symbol")
         if not stock_symbol:
             return apology("Require symbol")
-        
+
         try:
             stock_info = lookup(stock_symbol, API_KEY)
             if not stock_info:
@@ -274,8 +292,8 @@ def sell():
 
         # Get the user's available shares for this stock
         result = db.execute(
-            "SELECT shares_amount FROM user_stocks WHERE user_id = ? AND stock_symbol = ?", 
-            (session["user_id"], stock_symbol)
+            "SELECT shares_amount FROM user_stocks WHERE user_id = ? AND stock_symbol = ?",
+            (session["user_id"], stock_symbol),
         ).fetchone()
 
         if result is None or sell_amount > result["shares_amount"]:
@@ -285,8 +303,8 @@ def sell():
             with db:  # This automatically starts and commits a transaction
                 if sell_amount == result["shares_amount"]:
                     db.execute(
-                        "DELETE FROM user_stocks WHERE user_id = ? AND stock_symbol = ?", 
-                        (session["user_id"], stock_symbol)
+                        "DELETE FROM user_stocks WHERE user_id = ? AND stock_symbol = ?",
+                        (session["user_id"], stock_symbol),
                     )
                 else:
                     new_shares = result["shares_amount"] - sell_amount
@@ -297,31 +315,42 @@ def sell():
                     )
                 # Get user's current cash balance
                 user_cash = db.execute(
-                    "SELECT cash FROM users WHERE id = ?", 
-                    (session["user_id"],)
+                    "SELECT cash FROM users WHERE id = ?", (session["user_id"],)
                 ).fetchone()
 
-                updated_cash = float(user_cash["cash"]) + stock_info["price"] * sell_amount
-                    
+                updated_cash = (
+                    float(user_cash["cash"]) + stock_info["price"] * sell_amount
+                )
+
                 # Update user's cash
                 db.execute(
-                    "UPDATE users SET cash = ? WHERE id = ?", 
-                    (updated_cash, session["user_id"])
+                    "UPDATE users SET cash = ? WHERE id = ?",
+                    (updated_cash, session["user_id"]),
                 )
 
                 # Update transaction history
                 db.execute(
                     "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, time) "
                     "VALUES (?, ?, ?, ?, ?, ?)",
-                    (session["user_id"], "sell", stock_symbol, stock_info["price"], sell_amount, datetime.now()),
+                    (
+                        session["user_id"],
+                        "sell",
+                        stock_symbol,
+                        stock_info["price"],
+                        sell_amount,
+                        datetime.now(),
+                    ),
                 )
-                logger.info(f"User {session['user_id']} sold {sell_amount} shares of {stock_symbol}.")
+                logger.info(
+                    f"User {session['user_id']} sold {sell_amount} shares of {stock_symbol}."
+                )
 
         except sqlite3.Error as e:
             logger.error(f"Sell transaction failed: {e}")
             return apology(f"Transaction failed: /sell")
-        
+
         return redirect("/home")
+
 
 @portfolio_bp.route("/contribute", methods=["GET"])
 @login_required
@@ -332,4 +361,3 @@ def contribute():
 @portfolio_bp.route("/apologize", methods=["GET"])
 def apologize():
     return apology("This feature is being implemented!")
-

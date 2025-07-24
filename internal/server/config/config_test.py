@@ -1,6 +1,7 @@
 import unittest
 from internal.server.config.config import CONFIG
 
+
 class TestConfigClasses(unittest.TestCase):
 
     def test_config_yaml_connection(self):

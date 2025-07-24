@@ -9,15 +9,16 @@ from internal.server.utils.exception import ApiLimitError
 from internal.server.model.sqlite_connection import get_db
 
 # take environment variables from .env.
-load_dotenv()  
+load_dotenv()
 # Retrieve the API key
 API_TIME_TO_UPDATE = int(os.getenv("API_TIME_TO_UPDATE"))
+
 
 # Stock lookup
 def lookup(symbol, api_key):
     """
     Perform API request to get stock information
-    Args: 
+    Args:
         symbol: a string of stock_symbol, can be lowercase or uppercase
         api_key
     Returns:
@@ -29,8 +30,7 @@ def lookup(symbol, api_key):
     conn = get_db()
 
     stock_row = conn.execute(
-        "SELECT * FROM stock_status WHERE stock_symbol = ?",
-        (symbol,)
+        "SELECT * FROM stock_status WHERE stock_symbol = ?", (symbol,)
     ).fetchone()
 
     now = datetime.now()
@@ -45,48 +45,59 @@ def lookup(symbol, api_key):
         # Convert API_TIME_TO_UPDATE from int (seconds) to timedelta
         update_threshold = timedelta(seconds=API_TIME_TO_UPDATE)
 
-        if ((datetime.now() - stock_price_time) <= update_threshold):
-            return {"symbol": stock_row["stock_symbol"], "price": stock_row["stock_price"]}
+        if (datetime.now() - stock_price_time) <= update_threshold:
+            return {
+                "symbol": stock_row["stock_symbol"],
+                "price": stock_row["stock_price"],
+            }
 
-    url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}'
+    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}"
     try:
         response = requests.get(url, timeout=5)
         response.raise_for_status()  # Raise an error for HTTP issues
-        data = response.json() # Convert JSON-formatted string to dictionary
+        data = response.json()  # Convert JSON-formatted string to dictionary
 
         print("API request on " + symbol)
 
-        # Check for API rate limit 
+        # Check for API rate limit
         if is_limited(data):
             raise ApiLimitError("API Limit exceed, max 25 requests per day")
 
         if "Global Quote" in data:
             stock_data = data["Global Quote"]
         else:
-            stock_data = None   
+            stock_data = None
 
         if is_invalid(stock_data):
             return None
-        
+
         symbol = stock_data.get("01. symbol")
         price = float(stock_data.get("05. price", 0))  # Convert safely to float
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        cursor = conn.execute("SELECT 1 FROM stock_status WHERE stock_symbol = ?", (symbol,))
+        cursor = conn.execute(
+            "SELECT 1 FROM stock_status WHERE stock_symbol = ?", (symbol,)
+        )
         row = cursor.fetchone()
 
         if row:
             # Update if it exists
-            conn.execute("UPDATE stock_status SET stock_price = ?, time = ? WHERE stock_symbol = ?", (price, now, symbol))
+            conn.execute(
+                "UPDATE stock_status SET stock_price = ?, time = ? WHERE stock_symbol = ?",
+                (price, now, symbol),
+            )
         else:
             # Insert if it does not exist
-            conn.execute("INSERT INTO stock_status (stock_symbol, stock_price, time) VALUES (?, ?, ?)", (symbol, price, now))
+            conn.execute(
+                "INSERT INTO stock_status (stock_symbol, stock_price, time) VALUES (?, ?, ?)",
+                (symbol, price, now),
+            )
 
         conn.commit()
 
         return {"symbol": symbol, "price": price}
-    
+
     except requests.exceptions.Timeout:
         print("Error: Request timed out.")
         return {"error": "Request timed out. Try again later."}
@@ -98,16 +109,17 @@ def lookup(symbol, api_key):
         print(f"Value Conversion Error: {e}")
     return None
 
+
 # The size can be very big
 def get_all_active_stocks(api_key):
     # replace the "demo" apikey below with your own key from https://www.alphavantage.co/support/#api-key
     try:
-        CSV_URL = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={api_key}'
+        CSV_URL = f"https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={api_key}"
         stocks = []
         with requests.Session() as s:
             download = s.get(CSV_URL)
-            decoded_content = download.content.decode('utf-8')
-            cr = csv.reader(decoded_content.splitlines(), delimiter=',')
+            decoded_content = download.content.decode("utf-8")
+            cr = csv.reader(decoded_content.splitlines(), delimiter=",")
             my_list = list(cr)
             for row in my_list:
                 stocks.append(row)
@@ -116,20 +128,21 @@ def get_all_active_stocks(api_key):
         print("Error in get_all_active_stocks function")
         return None
 
+
 # Get n stocks
 def get_all_active_stocks(api_key, amount):
     # replace the "demo" apikey below with your own key from https://www.alphavantage.co/support/#api-key
     try:
-        CSV_URL = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={api_key}'
+        CSV_URL = f"https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={api_key}"
         stocks = []
         with requests.Session() as s:
             download = s.get(CSV_URL)
-            decoded_content = download.content.decode('utf-8')
-            cr = csv.reader(decoded_content.splitlines(), delimiter=',')
+            decoded_content = download.content.decode("utf-8")
+            cr = csv.reader(decoded_content.splitlines(), delimiter=",")
             my_list = list(cr)
             count = 0
             for row in my_list:
-                if (count >= amount):
+                if count >= amount:
                     return stocks
                 else:
                     stocks.append(row)
@@ -138,11 +151,12 @@ def get_all_active_stocks(api_key, amount):
         print("Error in get_all_active_stocks function")
         return None
 
+
 def is_invalid(stock_data):
     """
     Check if the provided stock_data dictionary is invalid.
 
-    The function expects stock_data to be a dictionary containing stock 
+    The function expects stock_data to be a dictionary containing stock
     information with keys such as '01. symbol', '05. price', etc.
 
     Args:
@@ -152,10 +166,11 @@ def is_invalid(stock_data):
         return True
     else:
         return False
-    
+
+
 def is_limited(API_response):
     """
-    Check if the API response exceed the rate limit 
+    Check if the API response exceed the rate limit
 
     The function expects API_response to be a raw API response containing
     the key "Information".
@@ -170,11 +185,12 @@ def is_limited(API_response):
             return True
     return False
 
+
 def pretty_print(data):
     """
     pretty_print json data
     Args:
-        data (dictionary type): 
+        data (dictionary type):
     """
     pretty_json = json.dumps(data, indent=4)
     print(pretty_json)

@@ -5,6 +5,7 @@ from internal.core.bugger.bugger import bugger
 # --- This file is extremely temporary ---
 # --- TODO: Add proper integration test in place of this file ---
 
+
 def test_config_values():
     print("==== Testing Config Values ====\n")
 
@@ -26,6 +27,7 @@ def test_config_values():
     print("[API Config]")
     print(f"Time to update: {CONFIG.api.time_to_update_second}")
 
+
 def test_logger():
     logger.info("This is an info message for testing.")
     logger.error("This is an error message for testing.")
@@ -33,13 +35,17 @@ def test_logger():
     logger.debug("This is a debug message for testing.")
     logger.critical("This is a critical message for testing.")
 
+
 def test_bugger():
-    bugger.log({
-        "error": "userID not found",
-        "user_id": "12345",
-        "action": "fetch_profile",
-        "module": "UserService"
-    })
+    bugger.log(
+        {
+            "error": "userID not found",
+            "user_id": "12345",
+            "action": "fetch_profile",
+            "module": "UserService",
+        }
+    )
+
 
 if __name__ == "__main__":
     test_config_values()

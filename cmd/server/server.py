@@ -8,15 +8,19 @@ from internal.server.routes.portfolio.portforlio_routes import portfolio_bp
 from internal.server.utils.utils import usd, time_format
 
 # take environment variables from .env.
-load_dotenv()  
+load_dotenv()
 # Retrieve the API key
 API_KEY = os.getenv("API_KEY")
 
 # Configure application
 app = Flask(
     __name__,
-    template_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/templates')),
-    static_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/static'))
+    template_folder=os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../frontend/templates")
+    ),
+    static_folder=os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../frontend/static")
+    ),
 )
 
 # Configure session to use filesystem (instead of signed cookies)
@@ -31,6 +35,7 @@ app.jinja_env.filters["time_format"] = time_format
 # Register blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(portfolio_bp)
+
 
 @app.teardown_appcontext
 def teardown_db(exception):

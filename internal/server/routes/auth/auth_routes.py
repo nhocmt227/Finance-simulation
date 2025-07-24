@@ -8,6 +8,7 @@ import sqlite3
 
 auth_bp = Blueprint("auth", __name__)
 
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     """Handle user login.
@@ -22,7 +23,7 @@ def login():
     # User reached route via GET (as by clicking a link or via redirect)
     if request.method == "GET":
         return render_template("auth/login.html")
-    
+
     # User reached route via POST (as by submitting a form via POST)
     else:
         username = request.form.get("username")
@@ -36,9 +37,11 @@ def login():
 
         # Query database for username
         try:
-            rows = get_db().execute(
-                "SELECT * FROM users WHERE username = ?", (username,)
-            ).fetchall()
+            rows = (
+                get_db()
+                .execute("SELECT * FROM users WHERE username = ?", (username,))
+                .fetchall()
+            )
         except sqlite3.Error as e:
             logger.error(f"Database error during login for user '{username}': {e}")
             return apology("Unexpected error during login", 500)
@@ -53,8 +56,8 @@ def login():
 
         # Redirect user to home page
         return redirect("/home")
-    
-    
+
+
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
@@ -80,10 +83,12 @@ def register():
             return apology("Password length must be from 8 to 30 characters")
         if password != password_confirmation:
             return apology("Passwords do not match")
-        
+
         # Check if username exist
         try:
-            user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+            user = db.execute(
+                "SELECT * FROM users WHERE username = ?", (username,)
+            ).fetchone()
         except sqlite3.Error as e:
             logger.error(f"Database error checking user existence: {e}")
             return apology("Unexpected error during registration", 500)
@@ -92,12 +97,12 @@ def register():
             return apology("Username existed")
 
         password_hash = generate_password_hash(password)
-        
+
         try:
             # Save user data into database
             db.execute(
                 "INSERT INTO users (username, hash) VALUES (?, ?)",
-                (username, password_hash)
+                (username, password_hash),
             )
             db.commit()
             logger.info(f"User registered successfully: {username}")
@@ -106,15 +111,17 @@ def register():
             # This occur because UNIQUE constraint has been violated
             return apology("Username existed")
         except sqlite3.Error as e:
-            logger.error({
-                "error": "Registration DB failure",
-                "username": username,
-                "details": str(e)
-            })
+            logger.error(
+                {
+                    "error": "Registration DB failure",
+                    "username": username,
+                    "details": str(e),
+                }
+            )
             return apology("Unexpected error in /register")
-    
+
     return render_template("auth/register.html")
-    
+
 
 @auth_bp.route("/logout")
 def logout():
@@ -129,5 +136,3 @@ def logout():
 
     # Redirect user to login form
     return redirect("/home")
-    
-

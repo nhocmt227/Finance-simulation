@@ -46,3 +46,7 @@ flask_session/
 
 # Environment configuration file
 .env
+
+# Doit files
+.doit.db-shm
+.doit.db-wal

@@ -1,4 +1,5 @@
 import sys
+
 sys.path.insert(0, ".")
 from cmd.server.server import app
 from internal.server.config.config import CONFIG
