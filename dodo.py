@@ -28,3 +28,10 @@ def task_cleanup():
         ],
         'verbosity': 2,
     }
+
+def task_clear_logs():
+    """Clear log files."""
+    return {
+        'actions': ['rm -f logs/*.log'],
+        'verbosity': 2,
+    }
