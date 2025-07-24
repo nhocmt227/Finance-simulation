@@ -1,11 +1,12 @@
 import sqlite3
 from flask import g
-from dotenv import load_dotenv
 import os
+from internal.server.config.config import CONFIG
 
-# take environment variables from .env.
-load_dotenv()
-DATABASE = os.getenv("DATABASE")
+DB_NAME = CONFIG.database.db_name
+
+DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "db", DB_NAME)
+DB_PATH = os.path.abspath(DB_PATH)  # Resolve full path
 
 
 def get_db():
@@ -16,7 +17,7 @@ def get_db():
     access to rows.
     """
     if "db" not in g:
-        g.db = sqlite3.connect(DATABASE, detect_types=sqlite3.PARSE_DECLTYPES)
+        g.db = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
         g.db.row_factory = sqlite3.Row  # Enables dictionary-like row access
     return g.db
 
