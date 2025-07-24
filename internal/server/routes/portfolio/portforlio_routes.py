@@ -7,6 +7,8 @@ from internal.server.model.sqlite_connection import get_db
 from internal.server.utils.utils import apology, login_required
 from internal.server.api.API_handlers import lookup
 from internal.server.utils.exception import ApiLimitError
+from internal.core.logger.logger import logger
+from internal.core.bugger.bugger import bugger
 import sqlite3
 
 # take environment variables from .env.
@@ -28,13 +30,17 @@ def main():
 @login_required
 def index():
     conn = get_db()
+    logger.info(f"Fetching portfolio for user_id={session['user_id']}.")
 
     # Get list of distinct stocks purchased
-    rows = conn.execute(
-        "SELECT DISTINCT stock_symbol FROM user_stocks WHERE user_id = ?",
-        (session["user_id"],)
-    ).fetchall()
-
+    try:
+        rows = conn.execute(
+            "SELECT DISTINCT stock_symbol FROM user_stocks WHERE user_id = ?",
+            (session["user_id"],)
+        ).fetchall()
+    except sqlite3.Error as e:
+        logger.error(f"Database error when fetching distinct stocks: {e}")
+        return apology("Could not retrieve portfolio.")
 
     stocks = []
 
@@ -45,28 +51,36 @@ def index():
             stock = lookup(row["stock_symbol"], API_KEY)
             print(row["stock_symbol"])
         except ApiLimitError as e:
+            logger.warning(f"API limit hit: {e.message}")
             return apology(f"{e.message}")
-        
-        if stock is None:
-            continue  # or handle error
+        except Exception as e:
+            bugger.log("unknown error during stock lookup in /home [GET]")
+            continue
         
         # Get total shares for this stock
-        total_shares_row = conn.execute(
-            "SELECT shares_amount FROM user_stocks WHERE stock_symbol = ? AND user_id = ?",
-            (row["stock_symbol"], session["user_id"])
-        ).fetchone()
+        try:
+            total_shares_row = conn.execute(
+                "SELECT shares_amount FROM user_stocks WHERE stock_symbol = ? AND user_id = ?",
+                (row["stock_symbol"], session["user_id"])
+            ).fetchone()
+        except sqlite3.Error as e:
+            logger.error(f"Failed to fetch shares amount: {e}")
+            continue
+
         stock["shares"] = total_shares_row["shares_amount"]
         stock["total"] = stock["price"] * stock["shares"]
         stocks.append(stock)
 
-
     # Get cash balance
-    # Get cash balance
-    cash_row = conn.execute(
-        "SELECT cash FROM users WHERE id = ?",
-        (session["user_id"],)
-    ).fetchone()
-    cash_balance = cash_row["cash"]
+    try:
+        cash_row = conn.execute(
+            "SELECT cash FROM users WHERE id = ?",
+            (session["user_id"],)
+        ).fetchone()
+        cash_balance = cash_row["cash"]
+    except sqlite3.Error as e:
+        logger.error(f"Failed to fetch user cash: {e}")
+        return apology("Error retrieving account info.")
 
     # Calculate grand total (cash + total value of stocks)
     grand_total = cash_balance + sum(stock["total"] for stock in stocks)
@@ -91,12 +105,15 @@ def buy():
         
         try:
             stock_info = lookup(stock_symbol, API_KEY)
+            if not stock_info:
+                return apology("Invalid stock symbol")
         except ApiLimitError as e:
+            logger.warning(f"API limit hit during buy: {e.message}")
             return apology(f"{e.message}")
+        except Exception as e:
+            bugger.log("bug during stock lookup in /buy [POST]")
+            return apology("Something went wrong.")
         
-        if not stock_info:
-            return apology("Invalid stock symbol")
-                # Get number of shares
         buy_amount = request.form.get("shares")
         if not buy_amount:
             return apology("Must provide shares")
@@ -113,10 +130,12 @@ def buy():
         try:
             user = db.execute("SELECT cash FROM users WHERE id = ?", (session["user_id"],)).fetchone()
             if not user:
+                bugger.log("User not found during buy.")
                 return apology("User not found")
             remaining_cash = float(user["cash"])  
-        except ValueError:
-            return apology("Unexpected error when access database")
+        except Exception as e:
+            logger.error(f"Error accessing user cash: {e}")
+            return apology("Unexpected error")
 
         # Calculate total cost of purchase
         amount_bought = float(stock_info["price"]) * buy_amount
@@ -157,14 +176,10 @@ def buy():
             )
 
             db.execute("COMMIT")
-        except sqlite3.IntegrityError as e: 
+            logger.info(f"User {session['user_id']} bought {buy_amount} shares of {stock_info['symbol']}.")
+        except sqlite3.Error as e: 
             db.rollback()
-            print(f"Error: {e}")
-            return apology(f"Transaction failed, /buy")
-        
-        except sqlite3.Error as e:
-            db.rollback()
-            print(f"Error: {e}")
+            logger.error(f"Transaction failed during buy: {e}")
             return apology(f"Transaction failed, /buy")
         
         # Redirect to main page
@@ -174,9 +189,14 @@ def buy():
 @login_required
 def history():
     """Show history of transactions"""
-    history_logs = get_db().execute(
-        "SELECT * FROM history_logs WHERE user_id = ? ORDER BY time DESC", (session["user_id"],)
-    ).fetchall()
+    try:
+        history_logs = get_db().execute(
+            "SELECT * FROM history_logs WHERE user_id = ? ORDER BY time DESC", (session["user_id"],)
+        ).fetchall()
+        logger.info(f"Transaction history retrieved for user_id={session['user_id']}.")
+    except sqlite3.Error as e:
+        logger.error(f"Failed to retrieve transaction history: {e}")
+        return apology("Could not load history.")
     return render_template("portfolio/history.html", history=history_logs)
 
 
@@ -195,13 +215,15 @@ def quote():
         try:
             # get stock information
             stock_information = lookup(symbol, API_KEY)
+            if stock_information is None:
+                return apology("Invalid stock symbol")
         except ApiLimitError as e:
+            logger.warning(f"API limit during quote: {e.message}")
             return apology(f"{e.message}")
+        except Exception as e:
+            logger.error(f"Quote lookup error: {e}")
+            return apology("Something went wrong")
         
-        print(stock_information)
-        if stock_information is None:
-            return apology("Invalid stock symbol")
-
         return render_template("portfolio/quoted.html", information=stock_information)
 
 
@@ -214,8 +236,14 @@ def sell():
     db = get_db()
 
     if request.method == "GET":
-        # Fetch user's stocks
-        array_of_stocks = db.execute("SELECT DISTINCT stock_symbol FROM user_stocks WHERE user_id = ?", (session["user_id"],)).fetchall()
+        try:
+            array_of_stocks = db.execute(
+                "SELECT DISTINCT stock_symbol FROM user_stocks WHERE user_id = ?", 
+                (session["user_id"],)
+            ).fetchall()
+        except sqlite3.Error as e:
+            logger.error(f"Error fetching stocks for sell page: {e}")
+            return apology("Could not load sell page.")
         return render_template("portfolio/sell.html", stocks=array_of_stocks)
     else:
         # Validate stock symbol from frontend
@@ -225,12 +253,13 @@ def sell():
         
         try:
             stock_info = lookup(stock_symbol, API_KEY)
+            if not stock_info:
+                return apology("Stock not found")
         except ApiLimitError as e:
             return apology(f"{e.message}")
-        
-        if not stock_info:
-            return apology("Stock not found")
-        
+        except Exception as e:
+            logger.error(f"Sell lookup failed: {e}")
+            return apology("Something went wrong")
 
         # Validate sell amount from frontend
         sell_amount = request.form.get("shares")
@@ -249,22 +278,18 @@ def sell():
             (session["user_id"], stock_symbol)
         ).fetchone()
 
-        if result is None:
-            return apology("Not enough shares to sell")
-        remaining_shares = result["shares_amount"]
-
-        if sell_amount > remaining_shares:
+        if result is None or sell_amount > result["shares_amount"]:
             return apology("Not enough shares to sell")
 
         try:
             with db:  # This automatically starts and commits a transaction
-                if sell_amount == remaining_shares:
+                if sell_amount == result["shares_amount"]:
                     db.execute(
                         "DELETE FROM user_stocks WHERE user_id = ? AND stock_symbol = ?", 
                         (session["user_id"], stock_symbol)
                     )
                 else:
-                    new_shares = remaining_shares - sell_amount
+                    new_shares = result["shares_amount"] - sell_amount
                     # Update stock holdings (subtract shares)
                     db.execute(
                         "UPDATE user_stocks SET shares_amount = ? WHERE user_id = ? AND stock_symbol = ?",
@@ -276,12 +301,7 @@ def sell():
                     (session["user_id"],)
                 ).fetchone()
 
-                if not user_cash:
-                    raise sqlite3.Error("User not found")
-
-                current_cash = float(user_cash["cash"])
-                amount_sell = stock_info["price"] * sell_amount
-                updated_cash = current_cash + amount_sell
+                updated_cash = float(user_cash["cash"]) + stock_info["price"] * sell_amount
                     
                 # Update user's cash
                 db.execute(
@@ -295,13 +315,10 @@ def sell():
                     "VALUES (?, ?, ?, ?, ?, ?)",
                     (session["user_id"], "sell", stock_symbol, stock_info["price"], sell_amount, datetime.now()),
                 )
+                logger.info(f"User {session['user_id']} sold {sell_amount} shares of {stock_symbol}.")
 
         except sqlite3.Error as e:
-            print(f"Error: {e}")
-            return apology(f"Transaction failed: /sell")
-        
-        except sqlite3.IntegrityError as e:
-            print(f"Error: {e}")
+            logger.error(f"Sell transaction failed: {e}")
             return apology(f"Transaction failed: /sell")
         
         return redirect("/home")
