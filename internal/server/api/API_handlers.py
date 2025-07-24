@@ -129,27 +129,27 @@ def get_all_active_stocks(api_key):
         return None
 
 
-# Get n stocks
-def get_all_active_stocks(api_key, amount):
-    # replace the "demo" apikey below with your own key from https://www.alphavantage.co/support/#api-key
-    try:
-        CSV_URL = f"https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={api_key}"
-        stocks = []
-        with requests.Session() as s:
-            download = s.get(CSV_URL)
-            decoded_content = download.content.decode("utf-8")
-            cr = csv.reader(decoded_content.splitlines(), delimiter=",")
-            my_list = list(cr)
-            count = 0
-            for row in my_list:
-                if count >= amount:
-                    return stocks
-                else:
-                    stocks.append(row)
-                    count += 1
-    except (ValueError, IndexError, KeyError):
-        print("Error in get_all_active_stocks function")
-        return None
+# # Get n stocks
+# def get_all_active_stocks(api_key, amount):
+#     # replace the "demo" apikey below with your own key from https://www.alphavantage.co/support/#api-key
+#     try:
+#         CSV_URL = f'https://www.alphavantage.co/query?function=LISTING_STATUS&apikey={api_key}'
+#         stocks = []
+#         with requests.Session() as s:
+#             download = s.get(CSV_URL)
+#             decoded_content = download.content.decode('utf-8')
+#             cr = csv.reader(decoded_content.splitlines(), delimiter=',')
+#             my_list = list(cr)
+#             count = 0
+#             for row in my_list:
+#                 if (count >= amount):
+#                     return stocks
+#                 else:
+#                     stocks.append(row)
+#                     count += 1
+#     except (ValueError, IndexError, KeyError):
+#         print("Error in get_all_active_stocks function")
+#         return None
 
 
 def is_invalid(stock_data):

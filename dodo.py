@@ -1,4 +1,3 @@
-import os
 import subprocess
 
 
@@ -41,6 +40,14 @@ def task_format():
     """Format Python code using black and Jinja2 templates using djlint."""
     return {
         "actions": ["black ."],
+        "verbosity": 2,
+    }
+
+
+def task_lint():
+    """Lint Python code using ruff."""
+    return {
+        "actions": ["ruff check . --fix"],
         "verbosity": 2,
     }
 

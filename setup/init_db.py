@@ -1,6 +1,5 @@
 import sqlite3
 import os
-from dotenv import load_dotenv
 from internal.server.config.config import CONFIG
 
 db_folder = os.path.abspath("db")

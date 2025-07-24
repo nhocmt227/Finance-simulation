@@ -54,7 +54,7 @@ def index():
         except ApiLimitError as e:
             logger.warning(f"API limit hit: {e.message}")
             return apology(f"{e.message}")
-        except Exception as e:
+        except Exception:
             logger.error("unknown error during stock lookup in /home [GET]")
             continue
 
@@ -115,7 +115,7 @@ def buy():
         except ApiLimitError as e:
             logger.warning(f"API limit hit during buy: {e.message}")
             return apology(f"{e.message}")
-        except Exception as e:
+        except Exception:
             logger.error("bug during stock lookup in /buy [POST]")
             return apology("Something went wrong.")
 
@@ -194,7 +194,7 @@ def buy():
         except sqlite3.Error as e:
             db.rollback()
             logger.error(f"Transaction failed during buy: {e}")
-            return apology(f"Transaction failed, /buy")
+            return apology("Transaction failed, /buy")
 
         # Redirect to main page
         return redirect("/")
@@ -347,7 +347,7 @@ def sell():
 
         except sqlite3.Error as e:
             logger.error(f"Sell transaction failed: {e}")
-            return apology(f"Transaction failed: /sell")
+            return apology("Transaction failed: /sell")
 
         return redirect("/home")
 

@@ -11,3 +11,4 @@ diot
 pytest
 black
 djlint
+ruff

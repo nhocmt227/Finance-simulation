@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 import os
 import json
 from internal.server.config.config import CONFIG
