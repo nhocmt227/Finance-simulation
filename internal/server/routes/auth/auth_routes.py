@@ -4,7 +4,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from internal.server.model.sqlite_connection import get_db, close_db
 from internal.server.utils.utils import apology, login_required
 from internal.core.logger.logger import logger
-from internal.core.bugger.bugger import bugger
 import sqlite3
 
 auth_bp = Blueprint("auth", __name__)
@@ -42,7 +41,6 @@ def login():
             ).fetchall()
         except sqlite3.Error as e:
             logger.error(f"Database error during login for user '{username}': {e}")
-            bugger.log_bug(f"Database error during login for user '{username}': {e}")
             return apology("Unexpected error during login", 500)
 
         # Ensure username exists and password is correct
@@ -88,7 +86,6 @@ def register():
             user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
         except sqlite3.Error as e:
             logger.error(f"Database error checking user existence: {e}")
-            bugger.log_bug(f"Database error checking user existence: {e}")
             return apology("Unexpected error during registration", 500)
 
         if user is not None:
@@ -107,10 +104,9 @@ def register():
             return redirect("/login")
         except sqlite3.IntegrityError as e:
             # This occur because UNIQUE constraint has been violated
-            logger.warning(f"Integrity error registering '{username}': {e}")
             return apology("Username existed")
         except sqlite3.Error as e:
-            bugger.log_bug({
+            logger.error({
                 "error": "Registration DB failure",
                 "username": username,
                 "details": str(e)

@@ -2,6 +2,8 @@ import os
 import logging
 from internal.server.config.config import CONFIG
 
+# --- TODO: Add unit test if necessary ---
+
 # Set up log directory and file
 LOG_DIR = os.path.join(os.path.dirname(__file__), '../../../logs')
 os.makedirs(LOG_DIR, exist_ok=True)  # Only runs once at startup

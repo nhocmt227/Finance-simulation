@@ -34,7 +34,7 @@ def test_logger():
     logger.critical("This is a critical message for testing.")
 
 def test_bugger():
-    bugger.log_bug({
+    bugger.log({
         "error": "userID not found",
         "user_id": "12345",
         "action": "fetch_profile",

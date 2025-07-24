@@ -4,6 +4,8 @@ import os
 import json
 from internal.server.config.config import CONFIG
 
+# --- TODO: Add unit test if necessary ---
+
 # Set up log directory
 LOG_DIR = os.path.join(os.path.dirname(__file__), '../../../logs')
 os.makedirs(LOG_DIR, exist_ok=True)  # Only runs once at startup
@@ -22,7 +24,7 @@ if not bugger.hasHandlers():
     
     bugger.addHandler(handler)
 
-def _log_bug(metadata):
+def _log(metadata):
     """
     Logs an error with timestamp and metadata into the bugs.log file.
     
@@ -37,4 +39,4 @@ def _log_bug(metadata):
     bugger.error(message)
 
 # Attach the function as a method of the logger
-bugger.log_bug = _log_bug
+bugger.log = _log
