@@ -6,75 +6,106 @@ from internal.server.utils.utils import apology
 from internal.core.logger.logger import logger
 import sqlite3
 
+# ----------------------
+# Logging Message Constants
+# ----------------------
+
+LOG_LOGIN_GET = "/login [GET]: Rendering login page"
+LOG_LOGIN_POST_START = "/login [POST]: Attempting login for user '{}'"
+LOG_LOGIN_DB_ERROR = "/login [POST]: Database error during login for user '{}': {}"
+LOG_LOGIN_INVALID = "/login [POST]: Invalid username and/or password for user '{}'"
+LOG_LOGIN_SUCCESS = "/login [POST]: Login successful for user '{}' (user_id={})"
+LOG_LOGIN_UNKNOWN_METHOD = "Unsupported method used on /login: '{}'"
+
+LOG_REGISTER_GET = "/register [GET]: Rendering registration page"
+LOG_REGISTER_POST_START = "/register [POST]: Attempting registration for user '{}'"
+LOG_REGISTER_DB_CONN_ERROR = "/register [POST]: Database connection error"
+LOG_REGISTER_VALIDATION_FAILED = "/register [POST]: Validation failed: {}"
+LOG_REGISTER_USER_EXISTS = "/register [POST]: Username already exists: '{}'"
+LOG_REGISTER_DB_QUERY_ERROR = (
+    "/register [POST]: DB error checking user existence for '{}': {}"
+)
+LOG_REGISTER_SUCCESS = "/register [POST]: Registration successful for user '{}'"
+LOG_REGISTER_DB_INSERT_ERROR = "/register [POST]: DB insertion failed for '{}': {}"
+LOG_REGISTER_UNKNOWN_METHOD = "Unsupported method used on /register: '{}'"
+
+LOG_LOGOUT = "/logout: User logged out (user_id={})"
+
+LOG_UNKNOWN_ROUTE = "Unknown route accessed: {}"
+
+# ----------------------
+# Environment
+# ----------------------
+
 auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-    """Handle user login.
-
-    GET: Render the login form.
-    POST: Validate credentials and log the user in.
-    """
-
-    # Forget any user_id
+    """Handle user login."""
     session.clear()
 
-    # User reached route via GET (as by clicking a link or via redirect)
     if request.method == "GET":
+        logger.debug(LOG_LOGIN_GET)
         return render_template("auth/login.html")
 
-    # User reached route via POST (as by submitting a form via POST)
-    else:
+    elif request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
 
+        logger.debug(LOG_LOGIN_POST_START, username)
+
         if not username:
             return apology("must provide username", 403)
-
         if not password:
             return apology("must provide password", 403)
 
-        # Query database for username
         try:
-            rows = (
+            user_rows = (
                 get_db()
                 .execute("SELECT * FROM users WHERE username = ?", (username,))
                 .fetchall()
             )
         except sqlite3.Error as e:
-            logger.error(f"Database error during login for user '{username}': {e}")
+            logger.error(LOG_LOGIN_DB_ERROR, username, e)
             return apology("Unexpected error during login", 500)
 
-        # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], password):
+        if len(user_rows) != 1 or not check_password_hash(
+            user_rows[0]["hash"], password
+        ):
+            logger.warning(LOG_LOGIN_INVALID, username)
             return apology("invalid username and/or password", 403)
 
-        # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
-        logger.info(f"User logged in: {username} (user_id={rows[0]['id']})")
+        user_record = user_rows[0]
+        session["user_id"] = user_record["id"]
 
-        # Redirect user to home page
+        logger.info(LOG_LOGIN_SUCCESS, username, user_record["id"])
         return redirect("/home")
+    else:
+        logger.warning(LOG_LOGIN_UNKNOWN_METHOD, request.method)
+        return apology("Method not allowed", 405)
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
     if request.method == "GET":
+        logger.debug(LOG_REGISTER_GET)
         return render_template("auth/register.html")
 
     elif request.method == "POST":
-        try:
-            db = get_db()
-        except sqlite3.Error:
-            return apology("Database connection error", 500)
-
         username = request.form.get("username")
         password = request.form.get("password")
         password_confirmation = request.form.get("password-confirmation")
 
-        # user data validation
+        logger.debug(LOG_REGISTER_POST_START, username)
+
+        try:
+            db = get_db()
+        except sqlite3.Error:
+            logger.error(LOG_REGISTER_DB_CONN_ERROR)
+            return apology("Database connection error", 500)
+
         if not username:
             return apology("No username found")
         if not password:
@@ -88,55 +119,45 @@ def register():
         if password != password_confirmation:
             return apology("Passwords do not match")
 
-        # Check if username exist
         try:
             user = db.execute(
                 "SELECT * FROM users WHERE username = ?", (username,)
             ).fetchone()
         except sqlite3.Error as e:
-            logger.error(f"Database error checking user existence: {e}")
+            logger.error(LOG_REGISTER_DB_QUERY_ERROR, username, e)
             return apology("Unexpected error during registration", 500)
 
         if user is not None:
+            logger.debug(LOG_REGISTER_USER_EXISTS, username)
             return apology("Username existed")
 
         password_hash = generate_password_hash(password)
 
         try:
-            # Save user data into database
             db.execute(
                 "INSERT INTO users (username, hash) VALUES (?, ?)",
                 (username, password_hash),
             )
             db.commit()
-            logger.info(f"User registered successfully: {username}")
+            logger.info(LOG_REGISTER_SUCCESS, username)
             return redirect("/login")
         except sqlite3.IntegrityError:
-            # This occur because UNIQUE constraint has been violated
+            logger.debug(LOG_REGISTER_USER_EXISTS, username)
             return apology("Username existed")
         except sqlite3.Error as e:
-            logger.error(
-                {
-                    "error": "Registration DB failure",
-                    "username": username,
-                    "details": str(e),
-                }
-            )
+            logger.error(LOG_REGISTER_DB_INSERT_ERROR, username, e)
             return apology("Unexpected error in /register")
 
-    return render_template("auth/register.html")
+    else:
+        logger.warning(LOG_REGISTER_UNKNOWN_METHOD.format(request.method))
+        return apology("Method not allowed", 405)
 
 
 @auth_bp.route("/logout")
 def logout():
     """Log user out"""
-
     user_id = session.get("user_id")
     if user_id:
-        logger.info(f"User logged out: user_id={user_id}")
-
-    # Forget any user_id
+        logger.info(LOG_LOGOUT, user_id)
     session.clear()
-
-    # Redirect user to login form
     return redirect("/home")
