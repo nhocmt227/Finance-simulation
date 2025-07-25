@@ -11,7 +11,7 @@ database:
 
 core:
   logger:
-    level: INFO
+    level: DEBUG
     filename: server.log
   bugger:
     filename: bugs.log

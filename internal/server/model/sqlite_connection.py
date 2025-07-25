@@ -19,7 +19,6 @@ def get_db():
     """
     if "db" not in g:
         try:
-            logger.info("log the path: " + DB_PATH)
             g.db = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
             g.db.row_factory = sqlite3.Row
             logger.info(f"Database connection established: {DB_PATH}")
