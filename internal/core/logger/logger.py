@@ -1,25 +1,37 @@
 import os
 import logging
-from internal.server.config.config import CONFIG
+from internal.server.config import CONFIG
 
-# --- TODO: Add unit test if necessary ---
-# --- TODO: Split logging logic based on the log level: DEBUG, INFO, WARNING, ERROR, CRITICAL ---
 
-# Set up log directory and file
-LOG_DIR = os.path.join(os.path.dirname(__file__), "../../../logs")
-os.makedirs(LOG_DIR, exist_ok=True)  # Only runs once at startup
+def get_logger() -> logging.Logger:
+    """
+    Creates and returns a singleton logger instance based on config settings.
+    Prevents reinitialization if already created.
+    """
 
-LOG_FILE = os.path.join(LOG_DIR, CONFIG.core.logger.filename)
+    print("------------------------ LOGGER INITIALIZE ------------------------")
 
-# --- Configure logging ---
-logger = logging.getLogger("app_logger")
+    logger = logging.getLogger("app_logger")
 
-if not logger.hasHandlers():  # Prevent duplicate handlers if re-imported
-    level = getattr(logging, CONFIG.core.logger.level.upper(), logging.INFO)
-    logger.setLevel(level)
+    if logger.hasHandlers():
+        return logger  # Return existing instance
 
-    handler = logging.FileHandler(LOG_FILE)
+    # Setup log directory
+    log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../logs"))
+    os.makedirs(log_dir, exist_ok=True)
+
+    log_file = os.path.join(log_dir, CONFIG.core.logger.filename)
+    log_level = getattr(logging, CONFIG.core.logger.level.upper(), logging.INFO)
+
+    logger.setLevel(log_level)
+
+    file_handler = logging.FileHandler(log_file)
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    handler.setFormatter(formatter)
+    file_handler.setFormatter(formatter)
 
-    logger.addHandler(handler)
+    logger.addHandler(file_handler)
+
+    return logger
+
+
+""

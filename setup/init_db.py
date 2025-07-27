@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from internal.server.config.config import CONFIG
+from internal.server.config import CONFIG
 
 db_folder = os.path.abspath("db")
 db_name = CONFIG.database.db_name or "finance.db"

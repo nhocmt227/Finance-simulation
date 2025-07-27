@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from internal.server.model.sqlite_connection import get_db
 from internal.server.utils.utils import apology
-from internal.core.logger.logger import logger
+from internal.core.logger import logger
 import sqlite3
 
 # ----------------------

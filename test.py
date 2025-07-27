@@ -1,6 +1,6 @@
-from internal.server.config.config import CONFIG
-from internal.core.logger.logger import logger
-from internal.core.bugger.bugger import bugger
+from internal.server.config import CONFIG
+from internal.core.logger import logger
+from internal.core.bugger import bugger
 
 # --- This file is extremely temporary ---
 # --- TODO: Add proper integration test in place of this file ---

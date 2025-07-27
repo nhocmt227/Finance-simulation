@@ -1,45 +1,44 @@
-import logging
 import os
 import json
-from internal.server.config.config import CONFIG
+import logging
+from internal.server.config import CONFIG
 
-# --- TODO: Add unit test if necessary ---
 
-# Set up log directory
-LOG_DIR = os.path.join(os.path.dirname(__file__), "../../../logs")
-os.makedirs(LOG_DIR, exist_ok=True)  # Only runs once at startup
+def get_bugger() -> logging.Logger:
+    """
+    Returns a singleton error-level logger for bug reports.
+    Adds a `.log()` method that accepts dict or str.
+    """
 
-LOG_FILE = os.path.join(LOG_DIR, CONFIG.core.bugger.filename)
+    print("------------------------ BUGGER INITIALIZE ------------------------")
 
-# Create a dedicated logger for bugs
-bugger = logging.getLogger("bugger_logger")
+    logger = logging.getLogger("bugger_logger")
 
-if not bugger.hasHandlers():
-    bugger.setLevel(logging.ERROR)
+    if logger.hasHandlers():
+        return logger
 
-    handler = logging.FileHandler(LOG_FILE)
+    log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../logs"))
+    os.makedirs(log_dir, exist_ok=True)
+
+    log_file = os.path.join(log_dir, CONFIG.core.bugger.filename)
+    logger.setLevel(logging.ERROR)
+
+    handler = logging.FileHandler(log_file)
     formatter = logging.Formatter(
         "%(asctime)s [%(levelname)s] %(message)s", "%Y-%m-%d %H:%M:%S"
     )
     handler.setFormatter(formatter)
 
-    bugger.addHandler(handler)
+    logger.addHandler(handler)
 
+    # Attach a custom log method to log structured metadata
+    def structured_log(metadata):
+        if isinstance(metadata, dict):
+            message = json.dumps(metadata)
+        else:
+            message = str(metadata)
+        logger.error(message)
 
-def _log(metadata):
-    """
-    Logs an error with timestamp and metadata into the bugs.log file.
+    logger.log = structured_log  # Dynamically attach method
 
-    Args:
-        metadata (dict or str): Info about the error. Dict is preferred.
-    """
-    if isinstance(metadata, dict):
-        message = json.dumps(metadata)
-    else:
-        message = str(metadata)
-
-    bugger.error(message)
-
-
-# Attach the function as a method of the logger
-bugger.log = _log
+    return logger
