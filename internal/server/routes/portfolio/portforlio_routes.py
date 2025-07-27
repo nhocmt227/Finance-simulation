@@ -7,7 +7,7 @@ from internal.server.model.sqlite_connection import get_db
 from internal.server.utils.utils import apology, login_required
 from internal.server.api.API_handlers import lookup
 from internal.server.utils.exception import ApiLimitError
-from internal.core.logger.logger import logger
+from internal.core.logger import logger
 from internal.core.bugger.bugger import bugger
 import sqlite3
 

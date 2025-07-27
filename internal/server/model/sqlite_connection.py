@@ -2,7 +2,7 @@ import sqlite3
 from flask import g
 import os
 from internal.server.config import CONFIG
-from internal.core.logger.logger import logger
+from internal.core.logger import logger
 
 DB_NAME = CONFIG.database.db_name
 
