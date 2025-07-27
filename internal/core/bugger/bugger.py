@@ -1,7 +1,7 @@
 import logging
 import os
 import json
-from internal.server.config.config import CONFIG
+from internal.server.config import CONFIG
 
 # --- TODO: Add unit test if necessary ---
 

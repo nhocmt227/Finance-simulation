@@ -1,5 +1,5 @@
 import unittest
-from internal.server.config.config import CONFIG
+from internal.server.config import CONFIG
 
 
 class TestConfigClasses(unittest.TestCase):

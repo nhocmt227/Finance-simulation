@@ -1,4 +1,4 @@
-from internal.server.config.config import CONFIG
+from internal.server.config import CONFIG
 from internal.core.logger.logger import logger
 from internal.core.bugger.bugger import bugger
 

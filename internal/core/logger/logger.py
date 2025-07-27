@@ -1,9 +1,10 @@
 import os
 import logging
-from internal.server.config.config import CONFIG
+from internal.server.config import CONFIG
 
 # --- TODO: Add unit test if necessary ---
 # --- TODO: Split logging logic based on the log level: DEBUG, INFO, WARNING, ERROR, CRITICAL ---
+
 
 # Set up log directory and file
 LOG_DIR = os.path.join(os.path.dirname(__file__), "../../../logs")

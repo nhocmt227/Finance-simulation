@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from internal.server.utils.exception import ApiLimitError
 from internal.server.model.sqlite_connection import get_db
-from internal.server.config.config import CONFIG
+from internal.server.config import CONFIG
 
 # take environment variables from .env.
 load_dotenv()
