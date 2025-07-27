@@ -1,12 +1,12 @@
 import unittest
-from internal.core.logger import LOGGER
+from internal.core.logger import logger
 
 
 class TestLogger(unittest.TestCase):
     def test_logger_instance(self):
-        self.assertIsNotNone(LOGGER)
-        self.assertTrue(LOGGER.hasHandlers())
-        LOGGER.info("Logger test passed.")
+        self.assertIsNotNone(logger)
+        self.assertTrue(logger.hasHandlers())
+        logger.info("Logger test passed.")
 
 
 if __name__ == "__main__":
