@@ -11,27 +11,27 @@ import sqlite3
 # ----------------------
 
 LOG_LOGIN_GET = "/login [GET]: Rendering login page"
-LOG_LOGIN_POST_START = "/login [POST]: Attempting login for user '{}'"
-LOG_LOGIN_DB_ERROR = "/login [POST]: Database error during login for user '{}': {}"
-LOG_LOGIN_INVALID = "/login [POST]: Invalid username and/or password for user '{}'"
-LOG_LOGIN_SUCCESS = "/login [POST]: Login successful for user '{}' (user_id={})"
-LOG_LOGIN_UNKNOWN_METHOD = "Unsupported method used on /login: '{}'"
+LOG_LOGIN_POST_START = "/login [POST]: Attempting login for user '%s'"
+LOG_LOGIN_DB_ERROR = "/login [POST]: Database error during login for user '%s': %s"
+LOG_LOGIN_INVALID = "/login [POST]: Invalid username and/or password for user '%s'"
+LOG_LOGIN_SUCCESS = "/login [POST]: Login successful for user '%s' (user_id=%s)"
+LOG_LOGIN_UNKNOWN_METHOD = "Unsupported method used on /login: '%s'"
 
 LOG_REGISTER_GET = "/register [GET]: Rendering registration page"
-LOG_REGISTER_POST_START = "/register [POST]: Attempting registration for user '{}'"
+LOG_REGISTER_POST_START = "/register [POST]: Attempting registration for user '%s'"
 LOG_REGISTER_DB_CONN_ERROR = "/register [POST]: Database connection error"
-LOG_REGISTER_VALIDATION_FAILED = "/register [POST]: Validation failed: {}"
-LOG_REGISTER_USER_EXISTS = "/register [POST]: Username already exists: '{}'"
+LOG_REGISTER_VALIDATION_FAILED = "/register [POST]: Validation failed: %s"
+LOG_REGISTER_USER_EXISTS = "/register [POST]: Username already exists: '%s'"
 LOG_REGISTER_DB_QUERY_ERROR = (
-    "/register [POST]: DB error checking user existence for '{}': {}"
+    "/register [POST]: DB error checking user existence for '%s': %s"
 )
-LOG_REGISTER_SUCCESS = "/register [POST]: Registration successful for user '{}'"
-LOG_REGISTER_DB_INSERT_ERROR = "/register [POST]: DB insertion failed for '{}': {}"
-LOG_REGISTER_UNKNOWN_METHOD = "Unsupported method used on /register: '{}'"
+LOG_REGISTER_SUCCESS = "/register [POST]: Registration successful for user '%s'"
+LOG_REGISTER_DB_INSERT_ERROR = "/register [POST]: DB insertion failed for '%s': %s"
+LOG_REGISTER_UNKNOWN_METHOD = "Unsupported method used on /register: '%s'"
 
-LOG_LOGOUT = "/logout: User logged out (user_id={})"
+LOG_LOGOUT = "/logout: User logged out (user_id=%s)"
 
-LOG_UNKNOWN_ROUTE = "Unknown route accessed: {}"
+LOG_UNKNOWN_ROUTE = "Unknown route accessed: %s"
 
 # ----------------------
 # Environment

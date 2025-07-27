@@ -18,45 +18,42 @@ import sqlite3
 LOG_CTX = "/portfolio"
 
 LOG_HOME_GET = f"{LOG_CTX}/home [GET]: Rendering portfolio"
-LOG_HOME_DB_ERROR = (
-    f"{LOG_CTX}/home: DB error while fetching stocks for user {{}}: {{}}"
-)
-LOG_HOME_API_LIMIT = f"{LOG_CTX}/home: API limit reached - {{}}"
+LOG_HOME_DB_ERROR = f"{LOG_CTX}/home: DB error while fetching stocks for user %s: %s"
+LOG_HOME_API_LIMIT = f"{LOG_CTX}/home: API limit reached - %s"
 LOG_HOME_LOOKUP_ERROR = (
-    f"{LOG_CTX}/home: Unexpected error during lookup for symbol '{{}}': {{}}"
+    f"{LOG_CTX}/home: Unexpected error during lookup for symbol '%s': %s"
 )
-LOG_HOME_CASH_ERROR = f"{LOG_CTX}/home: Error fetching cash for user {{}}: {{}}"
-LOG_HOME_RENDERED = f"{LOG_CTX}/home: Rendered for user_id={{}}"
+LOG_HOME_CASH_ERROR = f"{LOG_CTX}/home: Error fetching cash for user %s: %s"
+LOG_HOME_RENDERED = f"{LOG_CTX}/home: Rendered for user_id=%s"
 
 LOG_INDEX_GET_AUTH = f"{LOG_CTX}/ [GET]: Redirecting authenticated user to /home"
 LOG_INDEX_GET_PUBLIC = f"{LOG_CTX}/ [GET]: Rendering public index page"
 
-LOG_BUY_GET = f"{LOG_CTX}/buy [GET]: Rendering buy form for user_id={{}}"
-LOG_BUY_POST = f"{LOG_CTX}/buy [POST]: User {{}} buying stock '{{}}' amount {{}}"
-LOG_BUY_LOOKUP_FAIL = f"{LOG_CTX}/buy: Lookup error for symbol '{{}}': {{}}"
-LOG_BUY_TRANSACTION_FAIL = f"{LOG_CTX}/buy: Transaction failed for user {{}}: {{}}"
-LOG_BUY_SUCCESS = f"{LOG_CTX}/buy [POST]: User {{}} bought {{}} shares of {{}}"
-LOG_BUY_UNKNOWN_METHOD = "Unsupported method used on /buy: '{}'"
+LOG_BUY_GET = f"{LOG_CTX}/buy [GET]: Rendering buy form for user_id=%s"
+LOG_BUY_POST = f"{LOG_CTX}/buy [POST]: User %s buying stock '%s' amount %s"
+LOG_BUY_LOOKUP_FAIL = f"{LOG_CTX}/buy: Lookup error for symbol '%s': %s"
+LOG_BUY_TRANSACTION_FAIL = f"{LOG_CTX}/buy: Transaction failed for user %s: %s"
+LOG_BUY_SUCCESS = f"{LOG_CTX}/buy [POST]: User %s bought %s shares of %s"
+LOG_BUY_UNKNOWN_METHOD = "Unsupported method used on /buy: '%s'"
 
-LOG_SELL_GET = f"{LOG_CTX}/sell [GET]: Rendering sell page for user_id={{}}"
-LOG_SELL_LOOKUP_FAIL = f"{LOG_CTX}/sell: Lookup error for '{{}}': {{}}"
-LOG_SELL_TRANSACTION_FAIL = f"{LOG_CTX}/sell: Transaction failed for user {{}}: {{}}"
-LOG_SELL_SUCCESS = f"{LOG_CTX}/sell [POST]: User {{}} sold {{}} shares of {{}}"
-LOG_SELL_UNKNOWN_METHOD = "Unsupported method used on /sell: '{}'"
+LOG_SELL_GET = f"{LOG_CTX}/sell [GET]: Rendering sell page for user_id=%s"
+LOG_SELL_LOOKUP_FAIL = f"{LOG_CTX}/sell: Lookup error for '%s': %s"
+LOG_SELL_TRANSACTION_FAIL = f"{LOG_CTX}/sell: Transaction failed for user %s: %s"
+LOG_SELL_SUCCESS = f"{LOG_CTX}/sell [POST]: User %s sold %s shares of %s"
+LOG_SELL_UNKNOWN_METHOD = "Unsupported method used on /sell: '%s'"
 
-LOG_HISTORY_GET = (
-    f"{LOG_CTX}/history [GET]: Retrieving transaction history for user {{}}"
-)
-LOG_HISTORY_FAIL = f"{LOG_CTX}/history: Failed to retrieve history for user {{}}: {{}}"
+LOG_HISTORY_GET = f"{LOG_CTX}/history [GET]: Retrieving transaction history for user %s"
+LOG_HISTORY_FAIL = f"{LOG_CTX}/history: Failed to retrieve history for user %s: %s"
 
 LOG_QUOTE_GET = f"{LOG_CTX}/quote [GET]: Rendering quote form"
-LOG_QUOTE_LOOKUP_FAIL = f"{LOG_CTX}/quote: Lookup error for '{{}}': {{}}"
-LOG_QUOTE_API_LIMIT = f"{LOG_CTX}/quote: API limit reached for '{{}}' - {{}}"
-LOG_QUOTE_SUCCESS = f"{LOG_CTX}/quote [POST]: Successfully looked up symbol '{{}}'"
-LOG_QUOTE_UNKNOWN_METHOD = "Unsupported method used on /quote: '{}'"
+LOG_QUOTE_LOOKUP_FAIL = f"{LOG_CTX}/quote: Lookup error for '%s': %s"
+LOG_QUOTE_API_LIMIT = f"{LOG_CTX}/quote: API limit reached for '%s' - %s"
+LOG_QUOTE_SUCCESS = f"{LOG_CTX}/quote [POST]: Successfully looked up symbol '%s'"
+LOG_QUOTE_UNKNOWN_METHOD = "Unsupported method used on /quote: '%s'"
 
 LOG_CONTRIBUTE_GET = f"{LOG_CTX}/contribute [GET]: Rendering contribute page"
 LOG_APOLOGIZE_GET = f"{LOG_CTX}/apologize [GET]: Rendering apology message"
+
 
 # ----------------------
 # Environment
