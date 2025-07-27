@@ -33,5 +33,3 @@ def get_logger() -> logging.Logger:
 
     return logger
 
-
-""
