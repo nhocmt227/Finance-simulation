@@ -32,4 +32,3 @@ def get_logger() -> logging.Logger:
     logger.addHandler(file_handler)
 
     return logger
-
