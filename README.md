@@ -1,8 +1,8 @@
-# Trading simulation Project 🚀
+# Trading simulation Project 
 
 This is a trading simulation application that allows users to simulate simple trading logics using data from the [Alpha Vantage](https://www.alphavantage.co/). Whether you're testing your investment strategies or learning about market behavior, this tool provides a robust, interactive platform to explore the world of trading.
 
-## Features ✨
+## Features 
 - **Real-time Data Integration:** Pulls live market data from `Alpha Vantage API` to ensure your simulations are based on current market conditions.
 - **Customizable Trading Strategies:** Allows users to implement and test various trading strategies with simple configuration.
 - **User-Friendly Dashboard:** An intuitive web interface to monitor portfolio performance, view historical analysis, and analyze trading outcomes.
@@ -10,29 +10,37 @@ This is a trading simulation application that allows users to simulate simple tr
 - **Secure Authentication:** User login and session management to safeguard your trading data and preferences.
 
 
-## Tech Stack 🔧
+## Tech Stack 
 - **Backend:** Python 🐍 (Flask Framework)
-- **Frontend:** EJS, HTML, CSS, JavaScript 💻
-- **Database:** SQLite 🗄️
+- **Frontend:** EJS, HTML, CSS, JavaScript
+- **Database:** SQLite
+- **Build tools:** Python Doit
 
-## Installation ⚙️
+## Installation 
 - Make sure your computer have Python, pip and SQLite
 ```bash
 git clone https://github.com/nhocmt227/Finance-website.git
 cd Finance-website
 pip install -r requirements.txt
 ```
-- On MacOS or Linux: `./setup.sh`
-- On PowerShell Window: `./setup.bat`
+- On MacOS or Linux: `./setup/setup.sh`
+- On PowerShell Window: `./setup/setup.bat`
+- Run `dodo install`
 
-## Video demo: https://www.youtube.com/watch?v=M0qMXj7qQoY
+## APIs
+- [Alpha Vantage](https://www.alphavantage.co/)
 
-## Usage 🚀
-- Run the app `flask run`, you will see the app running in your `localhost` port `5000`
-- Visit `http://localhost:5000` in your browser.
+## Usage
+The usage commands can be seen on the `dodo.py` file.
+- `doit start`: Start the application.
+- `doit install`: Install the dependencies and run the app initialization.
+- `doit test`: Run the unit tests locally.
+- `doit cleanup`: Clean up the temporary files.
+- `doit format`: Format the codebase.
+- `doit lint`: Lint the codebase
 
-<img src=static/images/demo_images/homepage.png alt="Alt text for the image">
-<img src=static/images/demo_images/history.png alt="Alt text for the image">
+<img src=frontend/static/images/demo_images/homepage.png alt="Alt text for the image">
+<img src=frontend/static/images/demo_images/history.png alt="Alt text for the image">
 
 ## Things to note
 - The `API_KEY` inside the repo is public, limited and for testing only.
