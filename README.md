@@ -14,23 +14,29 @@ This is a trading simulation application that allows users to simulate simple tr
 - **Backend:** Python 🐍 (Flask Framework)
 - **Frontend:** EJS, HTML, CSS, JavaScript
 - **Database:** SQLite
-- **Build tools:** Python Doit
+- **Build tools:** Python Doit, Docker
 
 ## Installation 
-- Make sure your computer have Python, pip and SQLite
+- Make sure your computer have Python, SQLite and Docker Desktop
+- Docker Desktop installation: [Docker Desktop](https://apps.microsoft.com/detail/XP8CBJ40XLBWKX?hl=en-SG&gl=SG&ocid=pdpshare)
 ```bash
 git clone https://github.com/nhocmt227/Finance-website.git
 cd Finance-website
-pip install -r requirements.txt
+docker build -t stock-simulation-web .
+docker run -p 9000:9000 stock-simulation-web
 ```
-- On MacOS or Linux: `./setup/setup.sh`
-- On PowerShell Window: `./setup/setup.bat`
-- Run `dodo install`
+- You will see this on the terminal, click into this link to go to the web page:
+```
+Running on http://127.0.0.1:9000
+```
 
 ## APIs
-- [Alpha Vantage](https://www.alphavantage.co/)
+For development stage, we only use free tier API, so the API rates may be limited.
+- [Alpha Vantage](https://www.alphavantage.co/): 25 calls/day
+- [Twelve Data](https://twelvedata.com/account): 800 credits/day
+- [Finnhub](https://finnhub.io/): 60 API calls/minute
 
-## Usage
+## For developer:
 The usage commands can be seen on the `dodo.py` file.
 - `doit start`: Start the application.
 - `doit install`: Install the dependencies and run the app initialization.
