@@ -4,11 +4,16 @@ from internal.server.config import CONFIG
 
 db_folder = os.path.abspath("db")
 db_name = CONFIG.database.db_name or "finance.db"
-DATABASE = os.path.join(db_folder, db_name)
+db_path = os.path.join(db_folder, db_name)
 
 
 def create_tables():
-    connection = sqlite3.connect(DATABASE)
+
+    if os.path.exists(db_path):
+        print("Database already exists. Skipping creation.")
+        return
+
+    connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
 
     # Enable foreign key constraints
@@ -55,8 +60,8 @@ def create_tables():
 
     connection.commit()
     connection.close()
+    print("Database initialize successfully")
 
 
 if __name__ == "__main__":
     create_tables()
-    print("Database initialize successfully")

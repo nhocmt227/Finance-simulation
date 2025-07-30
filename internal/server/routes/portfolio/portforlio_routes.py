@@ -60,7 +60,7 @@ LOG_APOLOGIZE_GET = f"{LOG_CTX}/apologize [GET]: Rendering apology message"
 # ----------------------
 
 load_dotenv()
-API_KEY = os.getenv("API_KEY")
+API_KEY_ALPHA_VANTAGE = os.getenv("API_KEY_ALPHA_VANTAGE")
 portfolio_bp = Blueprint("portfolio", __name__)
 
 
@@ -98,7 +98,7 @@ def index():
         # Lookup current stock price
         symbol = row["stock_symbol"]
         try:
-            stock = lookup(symbol, API_KEY)
+            stock = lookup(symbol, API_KEY_ALPHA_VANTAGE)
         except ApiLimitError as e:
             logger.warning(LOG_HOME_API_LIMIT, e.message)
             return apology(e.message)
@@ -160,7 +160,7 @@ def buy():
             return apology("No stock found")
 
         try:
-            stock_info = lookup(stock_symbol, API_KEY)
+            stock_info = lookup(stock_symbol, API_KEY_ALPHA_VANTAGE)
             if not stock_info:
                 return apology("Invalid stock symbol")
         except ApiLimitError as e:
@@ -286,7 +286,7 @@ def quote():
             return apology("No symbol found")
 
         try:
-            stock_info = lookup(symbol, API_KEY)
+            stock_info = lookup(symbol, API_KEY_ALPHA_VANTAGE)
             if stock_info is None:
                 return apology("Invalid stock symbol")
             logger.info(LOG_QUOTE_SUCCESS, symbol)
@@ -330,7 +330,7 @@ def sell():
             return apology("Require symbol and shares")
 
         try:
-            stock_info = lookup(stock_symbol, API_KEY)
+            stock_info = lookup(stock_symbol, API_KEY_ALPHA_VANTAGE)
             if not stock_info:
                 return apology("Stock not found")
         except ApiLimitError as e:

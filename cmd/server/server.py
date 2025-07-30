@@ -52,7 +52,9 @@ def configure_app(app: Flask):
     """
     app.config["SESSION_PERMANENT"] = False
     app.config["SESSION_TYPE"] = "filesystem"
-    app.config["API_KEY"] = os.getenv("API_KEY")
+    app.config["API_KEY_ALPHA_VANTAGE"] = os.getenv("API_KEY_ALPHA_VANTAGE")
+    app.config["API_KEY_FINNHUB"] = os.getenv("API_KEY_FINNHUB")
+    app.config["API_KEY_TWELVE_DATA"] = os.getenv("API_KEY_TWELVE_DATA")
 
 
 def configure_session(app: Flask):
