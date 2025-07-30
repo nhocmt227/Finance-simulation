@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Remove .env file if it exists
 if [ -f .env ]; then
