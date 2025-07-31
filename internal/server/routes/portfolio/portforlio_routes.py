@@ -1,11 +1,9 @@
-import os
 from flask import Blueprint, render_template, request, redirect, session
 from datetime import datetime
-from dotenv import load_dotenv
 
 from internal.server.model.sqlite_connection import get_db
 from internal.server.utils.utils import apology, login_required
-from internal.server.api.API_handlers import lookup
+from internal.server.api import stock_aggregator
 from internal.server.utils.exception import ApiLimitError
 from internal.core.logger import logger
 from internal.core.bugger import bugger
@@ -59,8 +57,6 @@ LOG_APOLOGIZE_GET = f"{LOG_CTX}/apologize [GET]: Rendering apology message"
 # Environment
 # ----------------------
 
-load_dotenv()
-API_KEY_ALPHA_VANTAGE = os.getenv("API_KEY_ALPHA_VANTAGE")
 portfolio_bp = Blueprint("portfolio", __name__)
 
 
@@ -98,7 +94,7 @@ def index():
         # Lookup current stock price
         symbol = row["stock_symbol"]
         try:
-            stock = lookup(symbol, API_KEY_ALPHA_VANTAGE)
+            stock = stock_aggregator.lookup(symbol)
         except ApiLimitError as e:
             logger.warning(LOG_HOME_API_LIMIT, e.message)
             return apology(e.message)
@@ -160,7 +156,7 @@ def buy():
             return apology("No stock found")
 
         try:
-            stock_info = lookup(stock_symbol, API_KEY_ALPHA_VANTAGE)
+            stock_info = stock_aggregator.lookup(stock_symbol)
             if not stock_info:
                 return apology("Invalid stock symbol")
         except ApiLimitError as e:
@@ -286,7 +282,7 @@ def quote():
             return apology("No symbol found")
 
         try:
-            stock_info = lookup(symbol, API_KEY_ALPHA_VANTAGE)
+            stock_info = stock_aggregator.lookup(symbol)
             if stock_info is None:
                 return apology("Invalid stock symbol")
             logger.info(LOG_QUOTE_SUCCESS, symbol)
@@ -330,7 +326,7 @@ def sell():
             return apology("Require symbol and shares")
 
         try:
-            stock_info = lookup(stock_symbol, API_KEY_ALPHA_VANTAGE)
+            stock_info = stock_aggregator.lookup(stock_symbol)
             if not stock_info:
                 return apology("Stock not found")
         except ApiLimitError as e:
