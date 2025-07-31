@@ -17,6 +17,7 @@ This is a trading simulation application that allows users to simulate simple tr
 - **Frontend:** EJS, HTML, CSS, JavaScript
 - **Database:** SQLite
 - **Build tools:** Python Doit, Docker
+- **Deployment:** Render
 
 ## Running locally 
 - Make sure your computer have Python, SQLite and Docker Desktop
