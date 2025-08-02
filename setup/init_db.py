@@ -4,11 +4,16 @@ from internal.server.config import CONFIG
 
 db_folder = os.path.abspath("db")
 db_name = CONFIG.database.db_name or "finance.db"
-DATABASE = os.path.join(db_folder, db_name)
+db_path = os.path.join(db_folder, db_name)
 
 
 def create_tables():
-    connection = sqlite3.connect(DATABASE)
+
+    if os.path.exists(db_path):
+        print("Database already exists. Skipping creation.")
+        return
+
+    connection = sqlite3.connect(db_path)
     cursor = connection.cursor()
 
     # Enable foreign key constraints
@@ -28,8 +33,9 @@ def create_tables():
             user_id INTEGER NOT NULL,
             type TEXT NOT NULL CHECK (type IN ('buy', 'sell')),
             stock_symbol TEXT NOT NULL,
-            stock_price NUMERIC NOT NULL,
+            stock_price NUMERIC NOT NULL CHECK (stock_price > 0),
             shares_amount INTEGER NOT NULL CHECK (shares_amount > 0),
+            platform_fee NUMERIC NOT NULL CHECK (platform_fee >= 0),
             time DATETIME NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
         );
@@ -47,6 +53,10 @@ def create_tables():
             stock_price NUMERIC NOT NULL,
             time DATETIME NOT NULL 
         );
+
+        CREATE TABLE IF NOT EXISTS revenue (
+            total_revenue NUMERIC NOT NULL DEFAULT 0
+        );
                       
          
         
@@ -55,8 +65,8 @@ def create_tables():
 
     connection.commit()
     connection.close()
+    print("Database initialize successfully")
 
 
 if __name__ == "__main__":
     create_tables()
-    print("Database initialize successfully")

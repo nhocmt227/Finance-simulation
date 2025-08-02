@@ -27,6 +27,9 @@ def test_config_values():
     print("[API Config]")
     print(f"Time to update: {CONFIG.api.time_to_update_second}")
 
+    print("[Payment Config]")
+    print(f"Platform Fee: {CONFIG.payment.platform_fee}")
+
 
 def test_logger():
     logger.info("This is an info message for testing.")

@@ -7,6 +7,7 @@ from internal.server.config.config_object import (
     Logger,
     Bugger,
     Api,
+    Payment,
     Test,
 )
 
@@ -21,5 +22,6 @@ def build_config_from_dict(raw: Dict) -> Config:
             bugger=Bugger(**raw.get("core", {}).get("bugger", {})),
         ),
         api=Api(**raw.get("api", {})),
+        payment=Payment(**raw.get("payment", {})),
         test=Test(**raw.get("test", {})),
     )
