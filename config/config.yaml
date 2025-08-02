@@ -19,6 +19,9 @@ core:
 api:
   time_to_update_second: 86400
 
+payment:
+  platform_fee: 0.002 # 0.2%
+
 test:
   mock_boolean: true
   mock_string: test_finance.db

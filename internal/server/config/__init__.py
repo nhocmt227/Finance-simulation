@@ -1,5 +1,5 @@
 from internal.server.config.yaml_loader import load_raw_yaml_config
-from internal.server.config.builder import build_config_from_dict
+from internal.server.config.config import build_config_from_dict
 from internal.server.config.config_object import Config
 
 import os
