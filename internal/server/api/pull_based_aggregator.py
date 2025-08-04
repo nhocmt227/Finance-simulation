@@ -1,3 +1,6 @@
+from internal.server.utils.exception import ApiLimitError
+
+
 class StockAggregator:
     def __init__(self, apis: list):
         self.apis = apis
@@ -10,4 +13,4 @@ class StockAggregator:
                     return result
             except Exception:
                 continue
-        return None
+        raise ApiLimitError
