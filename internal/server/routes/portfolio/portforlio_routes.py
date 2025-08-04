@@ -5,6 +5,8 @@ from internal.server.model.sqlite_connection import get_db
 from internal.server.utils.utils import apology, login_required
 from internal.server.api import stock_aggregator
 from internal.server.utils.exception import ApiLimitError
+from internal.server.config import CONFIG
+from internal.server.utils.utils import price_format
 from internal.core.logger import logger
 from internal.core.bugger import bugger
 import sqlite3
@@ -190,8 +192,17 @@ def buy():
             return apology("Unexpected error")
 
         # Calculate total cost of purchase
-        total_cost = float(stock_info["price"]) * buy_amount
-        if remaining_cash < total_cost:
+        total_cost_pre_platform_fee = float(stock_info["price"]) * buy_amount
+        try:
+            platform_fee = price_format(
+                total_cost_pre_platform_fee * CONFIG.payment.platform_fee
+            )
+        except TypeError:
+            db.rollback()
+            return apology("transaction failed, /buy")
+        total_cost_post_platform_fee = total_cost_pre_platform_fee + platform_fee
+
+        if remaining_cash < total_cost_post_platform_fee:
             return apology("Insufficient cash in your account")
         try:
             db.execute("BEGIN TRANSACTION")
@@ -199,7 +210,7 @@ def buy():
             # Deduct cash from user's account
             db.execute(
                 "UPDATE users SET cash = ? WHERE id = ?",
-                (remaining_cash - total_cost, user_id),
+                (remaining_cash - total_cost_post_platform_fee, user_id),
             )
 
             # Insert stock status into portfolio (if exists, update instead)
@@ -222,14 +233,15 @@ def buy():
 
             # Insert transaction into history table
             db.execute(
-                "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, time) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, platform_fee, time) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     session["user_id"],
                     "buy",
                     stock_info["symbol"],
                     stock_info["price"],
                     buy_amount,
+                    platform_fee,
                     datetime.now(),
                 ),
             )

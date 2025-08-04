@@ -1,6 +1,7 @@
 from flask import redirect, render_template, session
 from functools import wraps
 from datetime import datetime
+from internal.server.config import CONFIG
 
 
 def apology(message, code=400):
@@ -92,3 +93,10 @@ def time_format(time):
         return time_obj.strftime("%b %d, %Y %I:%M %p")
     except ValueError:
         return time
+
+
+def price_format(price):
+    try:
+        return round(float(price), CONFIG.payment.decimal_places)
+    except (ValueError, TypeError):
+        return price

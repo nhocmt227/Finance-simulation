@@ -10,4 +10,4 @@ class StockAggregator:
                     return result
             except Exception:
                 continue
-        return {"error": True}
+        return None

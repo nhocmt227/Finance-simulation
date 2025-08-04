@@ -29,6 +29,7 @@ def test_config_values():
 
     print("[Payment Config]")
     print(f"Platform Fee: {CONFIG.payment.platform_fee}")
+    print(f"Decimal Places: {CONFIG.payment.decimal_places}")
 
 
 def test_logger():

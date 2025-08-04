@@ -21,6 +21,7 @@ api:
 
 payment:
   platform_fee: 0.002 # 0.2%
+  decimal_places: 2
 
 test:
   mock_boolean: true
