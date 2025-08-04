@@ -1,13 +1,13 @@
 :: Remove .env file if not exist
-if exist .env del .env
+:: if exist .env del .env
 
 :: Create an environment file
-type nul > .env
+:: type nul > .env
 
 :: setup environment variables. this API is just a testing API
-echo API_KEY=892RLERUEOGSNP0C >> .env 
-echo DATABASE = "finance.db" >> .env
-echo API_TIME_TO_UPDATE = "86400" >> .env
+:: echo "API_KEY_ALPHA_VANTAGE=XXXXXXXXXXXX" >> .env 
+:: echo "API_KEY_FINNHUB=XXXXXXXXXXXX" >> .env
+:: echo "API_KEY_TWELVE_DATA=XXXXXXXXXXXX" >> .env
 
 :: Set PYTHONPATH so Python can find the internal package
 set PYTHONPATH=.

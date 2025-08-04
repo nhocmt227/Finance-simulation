@@ -1,12 +1,12 @@
-import os
 from flask import Blueprint, render_template, request, redirect, session
 from datetime import datetime
-from dotenv import load_dotenv
 
 from internal.server.model.sqlite_connection import get_db
 from internal.server.utils.utils import apology, login_required
-from internal.server.api.API_handlers import lookup
+from internal.server.api import stock_aggregator
 from internal.server.utils.exception import ApiLimitError
+from internal.server.config import CONFIG
+from internal.server.utils.utils import price_format
 from internal.core.logger import logger
 from internal.core.bugger import bugger
 import sqlite3
@@ -59,9 +59,10 @@ LOG_APOLOGIZE_GET = f"{LOG_CTX}/apologize [GET]: Rendering apology message"
 # Environment
 # ----------------------
 
-load_dotenv()
-API_KEY = os.getenv("API_KEY")
 portfolio_bp = Blueprint("portfolio", __name__)
+
+PLATFORM_FEE_BUY = CONFIG.payment.platform_fee_buy
+PLATFORM_FEE_SELL = CONFIG.payment.platform_fee_sell
 
 
 @portfolio_bp.route("/", methods=["GET"])
@@ -98,7 +99,7 @@ def index():
         # Lookup current stock price
         symbol = row["stock_symbol"]
         try:
-            stock = lookup(symbol, API_KEY)
+            stock = stock_aggregator.lookup(symbol)
         except ApiLimitError as e:
             logger.warning(LOG_HOME_API_LIMIT, e.message)
             return apology(e.message)
@@ -160,7 +161,7 @@ def buy():
             return apology("No stock found")
 
         try:
-            stock_info = lookup(stock_symbol, API_KEY)
+            stock_info = stock_aggregator.lookup(stock_symbol)
             if not stock_info:
                 return apology("Invalid stock symbol")
         except ApiLimitError as e:
@@ -194,8 +195,11 @@ def buy():
             return apology("Unexpected error")
 
         # Calculate total cost of purchase
-        total_cost = float(stock_info["price"]) * buy_amount
-        if remaining_cash < total_cost:
+        total_cost_pre_platform_fee = float(stock_info["price"]) * buy_amount
+        platform_fee = price_format(total_cost_pre_platform_fee * PLATFORM_FEE_BUY)
+        total_cost_post_platform_fee = total_cost_pre_platform_fee + platform_fee
+
+        if remaining_cash < total_cost_post_platform_fee:
             return apology("Insufficient cash in your account")
         try:
             db.execute("BEGIN TRANSACTION")
@@ -203,7 +207,7 @@ def buy():
             # Deduct cash from user's account
             db.execute(
                 "UPDATE users SET cash = ? WHERE id = ?",
-                (remaining_cash - total_cost, user_id),
+                (remaining_cash - total_cost_post_platform_fee, user_id),
             )
 
             # Insert stock status into portfolio (if exists, update instead)
@@ -226,14 +230,15 @@ def buy():
 
             # Insert transaction into history table
             db.execute(
-                "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, time) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, platform_fee, time) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     session["user_id"],
                     "buy",
                     stock_info["symbol"],
                     stock_info["price"],
                     buy_amount,
+                    platform_fee,
                     datetime.now(),
                 ),
             )
@@ -286,7 +291,7 @@ def quote():
             return apology("No symbol found")
 
         try:
-            stock_info = lookup(symbol, API_KEY)
+            stock_info = stock_aggregator.lookup(symbol)
             if stock_info is None:
                 return apology("Invalid stock symbol")
             logger.info(LOG_QUOTE_SUCCESS, symbol)
@@ -330,7 +335,7 @@ def sell():
             return apology("Require symbol and shares")
 
         try:
-            stock_info = lookup(stock_symbol, API_KEY)
+            stock_info = stock_aggregator.lookup(stock_symbol)
             if not stock_info:
                 return apology("Stock not found")
         except ApiLimitError as e:
@@ -371,23 +376,25 @@ def sell():
                 user_cash = db.execute(
                     "SELECT cash FROM users WHERE id = ?", (user_id,)
                 ).fetchone()
-                updated_cash = (
-                    float(user_cash["cash"]) + stock_info["price"] * sell_amount
-                )
+                sell_pre_platform_fee = stock_info["price"] * sell_amount
+                platform_fee = price_format(sell_pre_platform_fee * PLATFORM_FEE_SELL)
+                sell_post_platform_fee = sell_pre_platform_fee - platform_fee
+                updated_cash = float(user_cash["cash"]) + sell_post_platform_fee
 
                 db.execute(
                     "UPDATE users SET cash = ? WHERE id = ?", (updated_cash, user_id)
                 )
 
                 db.execute(
-                    "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, time) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, platform_fee, time) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (
                         user_id,
                         "sell",
                         stock_symbol,
                         stock_info["price"],
                         sell_amount,
+                        platform_fee,
                         datetime.now(),
                     ),
                 )

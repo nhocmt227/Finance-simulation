@@ -9,6 +9,7 @@
                         <th>Stock Symbol</th>
                         <th>Purchased Price</th>
                         <th>Amount</th>
+                        <th>Platform fee</th>
                         <th>Type</th>
                         <th>Time</th>
                     </tr>
@@ -19,6 +20,7 @@
                             <td>{{ row["stock_symbol"] }}</td>
                             <td>{{ row["stock_price"] | usd }}</td>
                             <td>{{ row["shares_amount"] }}</td>
+                            <td>{{ row["platform_fee"] | usd }}</td>
                             {% if row["type"] == "buy" %}
                                 <td class="buy-type">Buy</td>
                             {% elif row["type"] == "sell" %}
