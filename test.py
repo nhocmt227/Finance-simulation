@@ -28,7 +28,8 @@ def test_config_values():
     print(f"Time to update: {CONFIG.api.time_to_update_second}")
 
     print("[Payment Config]")
-    print(f"Platform Fee: {CONFIG.payment.platform_fee}")
+    print(f"Platform Fee Buy: {CONFIG.payment.platform_fee_buy}")
+    print(f"Platform Fee Sell: {CONFIG.payment.platform_fee_sell}")
     print(f"Decimal Places: {CONFIG.payment.decimal_places}")
 
 

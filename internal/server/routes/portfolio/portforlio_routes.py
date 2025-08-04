@@ -61,6 +61,9 @@ LOG_APOLOGIZE_GET = f"{LOG_CTX}/apologize [GET]: Rendering apology message"
 
 portfolio_bp = Blueprint("portfolio", __name__)
 
+PLATFORM_FEE_BUY = CONFIG.payment.platform_fee_buy
+PLATFORM_FEE_SELL = CONFIG.payment.platform_fee_sell
+
 
 @portfolio_bp.route("/", methods=["GET"])
 def main():
@@ -193,13 +196,7 @@ def buy():
 
         # Calculate total cost of purchase
         total_cost_pre_platform_fee = float(stock_info["price"]) * buy_amount
-        try:
-            platform_fee = price_format(
-                total_cost_pre_platform_fee * CONFIG.payment.platform_fee
-            )
-        except TypeError:
-            db.rollback()
-            return apology("transaction failed, /buy")
+        platform_fee = price_format(total_cost_pre_platform_fee * PLATFORM_FEE_BUY)
         total_cost_post_platform_fee = total_cost_pre_platform_fee + platform_fee
 
         if remaining_cash < total_cost_post_platform_fee:
@@ -379,23 +376,25 @@ def sell():
                 user_cash = db.execute(
                     "SELECT cash FROM users WHERE id = ?", (user_id,)
                 ).fetchone()
-                updated_cash = (
-                    float(user_cash["cash"]) + stock_info["price"] * sell_amount
-                )
+                sell_pre_platform_fee = stock_info["price"] * sell_amount
+                platform_fee = price_format(sell_pre_platform_fee * PLATFORM_FEE_SELL)
+                sell_post_platform_fee = sell_pre_platform_fee - platform_fee
+                updated_cash = float(user_cash["cash"]) + sell_post_platform_fee
 
                 db.execute(
                     "UPDATE users SET cash = ? WHERE id = ?", (updated_cash, user_id)
                 )
 
                 db.execute(
-                    "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, time) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO history_logs (user_id, type, stock_symbol, stock_price, shares_amount, platform_fee, time) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (
                         user_id,
                         "sell",
                         stock_symbol,
                         stock_info["price"],
                         sell_amount,
+                        platform_fee,
                         datetime.now(),
                     ),
                 )

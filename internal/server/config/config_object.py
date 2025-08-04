@@ -50,8 +50,9 @@ class Api:
 
 
 class Payment:
-    def __init__(self, platform_fee, decimal_places):
-        self.platform_fee = platform_fee
+    def __init__(self, platform_fee_buy, platform_fee_sell, decimal_places):
+        self.platform_fee_buy = platform_fee_buy
+        self.platform_fee_sell = platform_fee_sell
         self.decimal_places = decimal_places
 
 
